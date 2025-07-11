@@ -3,7 +3,5 @@
 // Instead of: import { Header } from './components/Header/Header'
 
 export { default as Header } from './Header';
+export { default } from './Header';
 export type { HeaderProps } from './Header';
-
-// Named export for convenience
-export { Header as default } from './Header';

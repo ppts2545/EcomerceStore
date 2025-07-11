@@ -5,13 +5,25 @@
   padding: 0 16px;
 }
 
-/* Header Top Section */
+/* ใช้สีเดียวกันทั้งหมด */
+:root {
+  --shopee-primary: #ee4d2d;
+  --shopee-secondary: #f05533;
+  --shopee-gradient: linear-gradient(135deg, #ee4d2d 0%, #f05533 100%);
+}
+
+/* *** แก้ไขส่วนนี้ - รวม Header Top + Main เป็นชิ้นเดียว *** */
+.header-container {
+  background: var(--shopee-gradient);
+  /* ไม่มี padding, border, margin แยก */
+}
+
+/* Header Top Section - ลบ background และ padding ที่ซ้ำ */
 .header-top {
-  background-color: #fff;
-  border-bottom: 1px solid #e5e5e5;
+  /* ลบ background: var(--shopee-gradient); */
   font-size: 13px;
-  color: #999;
   padding: 8px 0;
+  /* ไม่มี background แยก */
 }
 
 .header-top .container {
@@ -28,21 +40,21 @@
 }
 
 .header-link {
-  color: #999;
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .header-link:hover {
-  color: #ee4d2d;
+  color: white;
 }
 
 .header-text {
-  color: #999;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .separator {
-  color: #e5e5e5;
+  color: rgba(255, 255, 255, 0.5);
   margin: 0 4px;
 }
 
@@ -53,20 +65,22 @@
 }
 
 .social-link {
-  color: #999;
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   font-size: 16px;
-  transition: transform 0.2s;
+  transition: transform 0.2s, color 0.2s;
 }
 
 .social-link:hover {
   transform: scale(1.1);
+  color: white;
 }
 
-/* Main Header Section */
+/* Main Header Section - ลบ background และรวมกับ header-top */
 .header-main {
-  background: linear-gradient(-180deg, #f53d2d, #f63);
+  /* ลบ background: var(--shopee-gradient); */
   padding: 16px 0;
+  /* ไม่มี background แยก */
 }
 
 .header-content {
@@ -131,15 +145,16 @@
 
 .search-button {
   padding: 12px 24px;
-  background-color: #fb5533;
+  background-color: var(--shopee-secondary);
   border: none;
   cursor: pointer;
   font-size: 16px;
+  color: white;
   transition: background-color 0.2s;
 }
 
 .search-button:hover {
-  background-color: #e04a2b;
+  background-color: #d63918;
 }
 
 /* Popular Keywords */
@@ -190,7 +205,7 @@
   top: 0;
   right: 0;
   background-color: #fff;
-  color: #ee4d2d;
+  color: var(--shopee-primary);
   font-size: 12px;
   font-weight: bold;
   padding: 2px 6px;
@@ -200,7 +215,7 @@
   line-height: 1.2;
 }
 
-/* Navigation Bar */
+/* Navigation Bar - แยกออกจาก gradient */
 .navbar {
   background-color: white;
   border-bottom: 1px solid #e5e5e5;
@@ -258,7 +273,7 @@
 
 .nav-link:hover,
 .nav-link.active {
-  color: #ee4d2d;
+  color: var(--shopee-primary);
 }
 
 .nav-link.active::after {
@@ -269,7 +284,7 @@
   transform: translateX(-50%);
   width: 24px;
   height: 2px;
-  background-color: #ee4d2d;
+  background-color: var(--shopee-primary);
 }
 
 /* Promotions */
@@ -278,7 +293,7 @@
 }
 
 .promo-banner {
-  background: linear-gradient(-180deg, #f53d2d, #f63);
+  background: var(--shopee-gradient);
   color: white;
   padding: 8px 16px;
   border-radius: 12px;
