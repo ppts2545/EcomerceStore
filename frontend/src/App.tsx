@@ -1,33 +1,28 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+
+import { useState } from 'react';
+import { Header } from './components/Header';
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [cartCount] = useState(3); // ตัวอย่างจำนวนสินค้าในตะกร้า
+
+  const handleSearch = (query: string) => {
+    console.log('Search query:', query);
+    // ที่นี่คุณสามารถเชื่อมต่อกับ API เพื่อค้นหาสินค้า
+  };
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <Header 
+        onSearch={handleSearch}
+        cartCount={cartCount}
+      />
+      
+      {/* ส่วนเนื้อหาหลักของเว็บไซต์จะอยู่ที่นี่ */}
+      <main style={{ minHeight: '80vh', padding: '20px', textAlign: 'center' }}>
+        <h1>🛍️ Welcome to Shopee Clone</h1>
+        <p>This is your e-commerce store homepage!</p>
+      </main>
     </>
   )
 }
