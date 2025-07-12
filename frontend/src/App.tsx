@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Header } from './components/Header';
 import { BannerHotword } from './components/Banner-Hotword';
+import MainSection from './components/Main Section/MainSection';
 import './App.css'
 
 function App() {
@@ -20,6 +21,10 @@ function App() {
       />
       <BannerHotword />
       
+      <MainSection >
+        <h2>Featured Products</h2>
+        <p>Check out our featured products below!</p>
+      </MainSection>
     </>
   )
 }
