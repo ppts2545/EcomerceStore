@@ -78,7 +78,7 @@ const BannerHotword: React.FC<BannerHotwordProps> = ({
       <div className="carousel-container">
         <ul className="carousel-slides" 
             style={{ 
-              width: '700%', 
+              width: `${displayBanners.length * 100}%`, 
               transform: `translateX(-${(currentSlide * 100) / displayBanners.length}%)`,
               transition: 'transform 0.5s ease'
             }}>
@@ -127,6 +127,54 @@ const BannerHotword: React.FC<BannerHotwordProps> = ({
     </div>
   );
 
+  // Render the Shortcut under the banner
+  const renderShortcut = () => {
+    type shortcutItem = {
+      id: number;
+      label: string;
+      link: string;
+      image: string;
+    };
+    
+    const shortcutItems: shortcutItem[] = [
+      { id: 1, label: 'อิเล็กทรอนิกส์', link: '#', image: '/src/assets/images/icons/อิเล็กทรอนิกส์.png' },
+      { id: 2, label: 'ซูเปอร์มาเก็ต', link: '#', image: '/src/assets/images/icons/ซูเปอร์มาเก็ต.png' },
+      { id: 3, label: 'โฮม', link: '#', image: '/src/assets/images/icons/โฮม.png' },
+      { id: 4, label: 'ถูกชัวร์', link: '#', image: '/src/assets/images/icons/ถูกชัวร์.png' },
+      { id: 5, label: 'สินค้าราคาโรงงาน', link: '#', image: '/src/assets/images/icons/สินค้าราคาโรงงาน.png' },
+      { id: 6, label: 'ช้อปปิ้งมอลล์', link: '#', image: '/src/assets/images/icons/ช้อปปิ้งมอลล์.png' },
+      { id: 7, label: 'ป้ายยา', link: '#', image: '/src/assets/images/icons/ป้ายยา.png' },
+      { id: 8, label: 'ส่งฟรี', link: '#', image: '/src/assets/images/icons/ส่งฟรี.png' }
+    ];
+
+    return (
+      <div className="shortcuts-section">
+        <div className="container">
+          <div className="shortcuts-grid">
+            {shortcutItems.map((item) => (
+              <a key={item.id} href={item.link} className="shortcut-item">
+                <div className='shortcut-item-container'>
+                  <div className='shortcut-item-icon-container'>
+                    <div 
+                      className='shortcut-item-icon' 
+                      style={{ 
+                        backgroundImage: `url(${item.image})`, 
+                        backgroundSize: 'contain', 
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'center'
+                      }}
+                    />
+                  </div>
+                  <div className='shortcut-item-label'>{item.label}</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <section className="banner-hotword-section">
       <div className="container">
@@ -142,6 +190,9 @@ const BannerHotword: React.FC<BannerHotwordProps> = ({
           </div>
         </div>
       </div>
+      
+      {/* Shortcuts section */}
+      {renderShortcut()}
     </section>
   );
 };
