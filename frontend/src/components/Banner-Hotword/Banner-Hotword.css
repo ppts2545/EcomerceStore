@@ -5,21 +5,12 @@
   --shopee-light: #fff5f3;
   --shopee-text: #333;
   --shopee-gray: #f5f5f5;
+  --border-radius: 8px;
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
 }
 
-div {
-  display: block;
-  unicode-bidi: isolate;
-}
-
-ul {
-  list-style-type: disc;
-  margin-block-start: 1em;
-  margin-block-end: 1em;
-  padding-inline-start: 40px;
-  unicode-bidi: isolate;
-}
-
+/* Container */
 .container {
   margin-left: auto;
   margin-right: auto;
@@ -27,93 +18,73 @@ ul {
   padding: 0 16px;
 }
 
-/* Section Banner Hotword */
-.section-banner-hotword {
+/* Main Section */
+.banner-hotword-section {
   background-color: var(--shopee-gray);
   padding: 20px 0;
-}
-
-.adds-hotword {
-  display: flex;
-  gap: 16px;
   line-height: 0;
   max-height: 235px;
   min-height: 235px;
 }
 
-/* Banner Slide Section */
-.adds-hotword-slide {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  flex: 2;
-  overflow: hidden;
-  position: relative;
+.banner-hotword-wrapper {
+  display: flex;
+  gap: 8px;
+  min-height: 235px;
+  max-height: 235px;
 }
 
-.stardust-carousel {
+/* Banner Carousel Area */
+.banner-carousel-area {
+  flex: 2;
+  position: relative;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--box-shadow);
+}
+
+/* Carousel Section */
+.carousel-section {
+  width: 100%;
   height: 100%;
+}
+
+.carousel-container {
   position: relative;
   width: 100%;
-}
-
-.stardust-carousel_item-list-wrapper {
-  box-sizing: border-box;
+  height: 235px;
   overflow: hidden;
-  position: relative;
-  height: 100%;
 }
 
-.stardust-carousel_item-list {
-  bottom: 0;
+.carousel-slides {
   display: flex;
   height: 100%;
-  left: 0;
   margin: 0;
-  overflow: hidden;
   padding: 0;
-  position: absolute;
-  right: 0;
-  top: 0;
-  touch-action: pan-y;
+  list-style: none;
   transition: transform 0.5s ease;
 }
 
-.stardust-carousel_item {
-  align-items: center;
-  align-self: center;
-  display: flex;
+.carousel-slide {
   flex-shrink: 0;
   height: 100%;
-  justify-content: center;
-  list-style: none;
-  overflow: hidden;
 }
 
-.stardust-carousel_item-inner-wrapper {
-  height: 100%;
-  width: 100%;
-}
-
-.stardust-carousel_item-inner-link {
+.slide-link {
   display: block;
-  height: 100%;
-  transition: transform 0.3s ease;
-}
-
-.stardust-carousel_item-inner-link:hover {
-  transform: scale(1.02);
-}
-
-.stardust-carousel_item-inner-link-image_container {
-  position: relative;
+  width: 100%;
   height: 100%;
 }
 
-.stardust-carousel_item-inner-link-image {
+.slide-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 8px;
+  transition: transform 0.3s ease;
+}
+
+.slide-link:hover .slide-image {
+  transform: scale(1.02);
 }
 
 /* Carousel Indicators */
@@ -134,7 +105,7 @@ ul {
   border: none;
   background-color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition);
 }
 
 .indicator.active {
@@ -146,116 +117,67 @@ ul {
   background-color: rgba(255, 255, 255, 0.8);
 }
 
-/* Hotwords Panel */
-.adds-hotword-images {
+/* Side Ads Area */
+.side-ads-area {
   flex: 1;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  flex-shrink: 0;
 }
 
-.hotwords-panel {
+.side-ads {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   height: 100%;
 }
 
-.hotwords-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--shopee-text);
-  margin: 0 0 16px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.side-ad-item {
+  flex: 1;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--box-shadow);
+  transition: var(--transition);
+  display: block;
 }
 
-.hotwords-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.hotword-btn {
-  background: linear-gradient(135deg, var(--shopee-light), #fff);
-  border: 1px solid #e5e5e5;
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 13px;
-  color: var(--shopee-text);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: left;
-}
-
-.hotword-btn:hover {
-  background: linear-gradient(135deg, var(--shopee-primary), var(--shopee-secondary));
-  color: white;
-  transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(238, 77, 45, 0.3);
-}
-
-.categories-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--shopee-text);
-  margin: 0 0 12px 0;
-}
-
-.categories-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.category-item {
-  background-color: var(--shopee-gray);
-  border-radius: 6px;
-  padding: 8px 6px;
-  font-size: 12px;
-  text-align: center;
-  color: var(--shopee-text);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.category-item:hover {
-  background-color: var(--shopee-light);
-  color: var(--shopee-primary);
+.side-ad-item:hover {
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.side-ad-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.side-ad-item:hover .side-ad-image {
+  transform: scale(1.05);
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .adds-hotword {
+  .banner-hotword-wrapper {
     flex-direction: column;
-    max-height: none;
     min-height: auto;
   }
   
-  .adds-hotword-slide {
+  .carousel-container {
     height: 180px;
   }
   
-  .adds-hotword-images {
-    margin-top: 16px;
+  .side-ads-area {
+    width: 100%;
+    margin-top: 8px;
   }
   
-  .hotwords-list {
+  .side-ads {
     flex-direction: row;
-    flex-wrap: wrap;
+    height: 80px;
   }
   
-  .hotword-btn {
+  .side-ad-item {
     flex: 1;
-    min-width: calc(50% - 4px);
-  }
-  
-  .categories-grid {
-    grid-template-columns: 1fr 1fr 1fr 1fr;
   }
 }
 
@@ -264,19 +186,20 @@ ul {
     padding: 0 12px;
   }
   
-  .section-banner-hotword {
+  .banner-hotword-section {
     padding: 16px 0;
   }
   
-  .adds-hotword-slide {
+  .carousel-container {
     height: 150px;
   }
   
-  .adds-hotword-images {
-    padding: 16px;
+  .side-ads {
+    height: 60px;
+    gap: 4px;
   }
   
-  .categories-grid {
-    grid-template-columns: 1fr 1fr;
+  .banner-hotword-wrapper {
+    gap: 4px;
   }
 }

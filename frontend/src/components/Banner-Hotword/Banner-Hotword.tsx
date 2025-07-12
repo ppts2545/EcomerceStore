@@ -8,42 +8,62 @@ export interface BannerHotwordProps {
     alt: string;
     link: string;
   }>;
-  hotwords?: string[];
-  onHotwordClick?: (keyword: string) => void;
+  sideAds?: Array<{
+    id: number;
+    image: string;
+    alt: string;
+    link: string;
+  }>;
 }
 
 const BannerHotword: React.FC<BannerHotwordProps> = ({ 
   banners = [],
-  hotwords = ['iPhone 15', 'MacBook Pro', 'AirPods', 'Samsung Galaxy', 'Nike Air Max'],
-  onHotwordClick 
+  sideAds = []
 }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Sample banners if none provided
+  // Default banners
   const defaultBanners = [
     {
       id: 1,
-      image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&h=300&fit=crop',
-      alt: 'iPhone 15 Sale',
-      link: '#'
+      image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&h=235&fit=crop&crop=center',
+      alt: 'iPhone 15 Flash Sale',
+      link: '#iphone-sale'
     },
     {
       id: 2,
-      image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&h=300&fit=crop',
-      alt: 'MacBook Sale',
-      link: '#'
+      image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&h=235&fit=crop&crop=center',
+      alt: 'MacBook Pro Sale',
+      link: '#macbook-sale'
     },
     {
       id: 3,
-      image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&h=300&fit=crop',
-      alt: 'Nike Sale',
-      link: '#'
+      image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&h=235&fit=crop&crop=center',
+      alt: 'Nike Sneakers Sale',
+      link: '#nike-sale'
+    }
+  ];
+
+  // Default side ads
+  const defaultSideAds = [
+    {
+      id: 1,
+      image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=300&h=110&fit=crop',
+      alt: 'Special Offer',
+      link: '#special-offer'
+    },
+    {
+      id: 2,
+      image: 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=300&h=110&fit=crop',
+      alt: 'New Arrivals',
+      link: '#new-arrivals'
     }
   ];
 
   const displayBanners = banners.length > 0 ? banners : defaultBanners;
+  const displaySideAds = sideAds.length > 0 ? sideAds : defaultSideAds;
 
-  // Auto slide effect
+  // Auto slide every 4 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % displayBanners.length);
@@ -52,85 +72,77 @@ const BannerHotword: React.FC<BannerHotwordProps> = ({
     return () => clearInterval(timer);
   }, [displayBanners.length]);
 
-  return (
-    <div className='section-banner-hotword'>
-      <div className='container'>
-        <div className='adds-hotword'>
-          {/* Banner Carousel */}
-          <div className='adds-hotword-slide'>
-            <div className='stardust-carousel'>
-              <div className='stardust-carousel_item-list-wrapper' style={{ paddingTop: '29.5003%' }}>
-                {/* Slide Image Advertise */}
-                <ul className='stardust-carousel_item-list' 
-                    style={{ 
-                      width: `${displayBanners.length * 100}%`, 
-                      transform: `translateX(-${(currentSlide * 100) / displayBanners.length}%)`,
-                      transition: 'transform 0.5s ease'
-                    }}>
-                  {displayBanners.map((banner) => (
-                    <li key={banner.id} 
-                        className='stardust-carousel_item' 
-                        style={{ width: `${100 / displayBanners.length}%` }}>
-                      <div className='stardust-carousel_item-inner-wrapper'>
-                        <a className='stardust-carousel_item-inner-link' href={banner.link}>
-                          <div className='stardust-carousel_item-inner-link-image_container'>
-                            <img 
-                              className='stardust-carousel_item-inner-link-image' 
-                              src={banner.image} 
-                              alt={banner.alt} 
-                              style={{ objectFit: 'cover', width: '100%', height: '100%' }} 
-                            />
-                          </div>
-                        </a>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              {/* Carousel indicators */}
-              <div className="carousel-indicators">
-                {displayBanners.map((_, index) => (
-                  <button
-                    key={index}
-                    className={`indicator ${currentSlide === index ? 'active' : ''}`}
-                    onClick={() => setCurrentSlide(index)}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          {/* Hotwords/Categories Panel */}
-          <div className='adds-hotword-images'>
-            <div className="hotwords-panel">
-              <h3 className="hotwords-title">🔥 คำค้นยอดนิยม</h3>
-              <div className="hotwords-list">
-                {hotwords.map((keyword, index) => (
-                  <button
-                    key={index}
-                    className="hotword-btn"
-                    onClick={() => onHotwordClick?.(keyword)}
-                  >
-                    {keyword}
-                  </button>
-                ))}
-              </div>
-              
-              <div className="quick-categories">
-                <h4 className="categories-title">หมวดหมู่ยอดนิยม</h4>
-                <div className="categories-grid">
-                  <div className="category-item">📱 มือถือ</div>
-                  <div className="category-item">💻 คอมพิวเตอร์</div>
-                  <div className="category-item">👟 รองเท้า</div>
-                  <div className="category-item">👕 เสื้อผ้า</div>
-                </div>
-              </div>
-            </div>
-          </div>
+  // Render main carousel
+  const renderCarousel = () => (
+    <div className="carousel-section">
+      <div className="carousel-container">
+        <ul className="carousel-slides" 
+            style={{ 
+              width: '700%', 
+              transform: `translateX(-${(currentSlide * 100) / displayBanners.length}%)`,
+              transition: 'transform 0.5s ease'
+            }}>
+          {displayBanners.map((banner) => (
+            <li key={banner.id} 
+                className="carousel-slide" 
+                style={{ width: `${100 / displayBanners.length}%` }}>
+              <a href={banner.link} className="slide-link">
+                <img 
+                  src={banner.image} 
+                  alt={banner.alt} 
+                  className="slide-image"
+                />
+              </a>
+            </li>
+          ))}
+        </ul>
+        
+        {/* Carousel indicators */}
+        <div className="carousel-indicators">
+          {displayBanners.map((_, index) => (
+            <button
+              key={index}
+              className={`indicator ${currentSlide === index ? 'active' : ''}`}
+              onClick={() => setCurrentSlide(index)}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
         </div>
       </div>
     </div>
+  );
+
+  // Render side advertisements in flex column
+  const renderSideAds = () => (
+    <div className="side-ads">
+      {displaySideAds.map((ad) => (
+        <a key={ad.id} href={ad.link} className="side-ad-item">
+          <img 
+            src={ad.image} 
+            alt={ad.alt}
+            className="side-ad-image"
+          />
+        </a>
+      ))}
+    </div>
+  );
+
+  return (
+    <section className="banner-hotword-section">
+      <div className="container">
+        <div className="banner-hotword-wrapper">
+          {/* Main carousel */}
+          <div className="banner-carousel-area">
+            {renderCarousel()}
+          </div>
+          
+          {/* Side ads in flex column */}
+          <div className="side-ads-area">
+            {renderSideAds()}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };
 
