@@ -1,0 +1,282 @@
+/* ใช้ CSS Variables สำหรับ Shopee Theme */
+:root {
+  --shopee-primary: #ee4d2d;
+  --shopee-secondary: #f05533;
+  --shopee-light: #fff5f3;
+  --shopee-text: #333;
+  --shopee-gray: #f5f5f5;
+}
+
+div {
+  display: block;
+  unicode-bidi: isolate;
+}
+
+ul {
+  list-style-type: disc;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  padding-inline-start: 40px;
+  unicode-bidi: isolate;
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1200px;
+  padding: 0 16px;
+}
+
+/* Section Banner Hotword */
+.section-banner-hotword {
+  background-color: var(--shopee-gray);
+  padding: 20px 0;
+}
+
+.adds-hotword {
+  display: flex;
+  gap: 16px;
+  line-height: 0;
+  max-height: 235px;
+  min-height: 235px;
+}
+
+/* Banner Slide Section */
+.adds-hotword-slide {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex: 2;
+  overflow: hidden;
+  position: relative;
+}
+
+.stardust-carousel {
+  height: 100%;
+  position: relative;
+  width: 100%;
+}
+
+.stardust-carousel_item-list-wrapper {
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+}
+
+.stardust-carousel_item-list {
+  bottom: 0;
+  display: flex;
+  height: 100%;
+  left: 0;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  touch-action: pan-y;
+  transition: transform 0.5s ease;
+}
+
+.stardust-carousel_item {
+  align-items: center;
+  align-self: center;
+  display: flex;
+  flex-shrink: 0;
+  height: 100%;
+  justify-content: center;
+  list-style: none;
+  overflow: hidden;
+}
+
+.stardust-carousel_item-inner-wrapper {
+  height: 100%;
+  width: 100%;
+}
+
+.stardust-carousel_item-inner-link {
+  display: block;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.stardust-carousel_item-inner-link:hover {
+  transform: scale(1.02);
+}
+
+.stardust-carousel_item-inner-link-image_container {
+  position: relative;
+  height: 100%;
+}
+
+.stardust-carousel_item-inner-link-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Carousel Indicators */
+.carousel-indicators {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.indicator.active {
+  background-color: var(--shopee-primary);
+  transform: scale(1.2);
+}
+
+.indicator:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* Hotwords Panel */
+.adds-hotword-images {
+  flex: 1;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hotwords-panel {
+  height: 100%;
+}
+
+.hotwords-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--shopee-text);
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hotwords-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.hotword-btn {
+  background: linear-gradient(135deg, var(--shopee-light), #fff);
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--shopee-text);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.hotword-btn:hover {
+  background: linear-gradient(135deg, var(--shopee-primary), var(--shopee-secondary));
+  color: white;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(238, 77, 45, 0.3);
+}
+
+.categories-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shopee-text);
+  margin: 0 0 12px 0;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.category-item {
+  background-color: var(--shopee-gray);
+  border-radius: 6px;
+  padding: 8px 6px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--shopee-text);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.category-item:hover {
+  background-color: var(--shopee-light);
+  color: var(--shopee-primary);
+  transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .adds-hotword {
+    flex-direction: column;
+    max-height: none;
+    min-height: auto;
+  }
+  
+  .adds-hotword-slide {
+    height: 180px;
+  }
+  
+  .adds-hotword-images {
+    margin-top: 16px;
+  }
+  
+  .hotwords-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .hotword-btn {
+    flex: 1;
+    min-width: calc(50% - 4px);
+  }
+  
+  .categories-grid {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
+  
+  .section-banner-hotword {
+    padding: 16px 0;
+  }
+  
+  .adds-hotword-slide {
+    height: 150px;
+  }
+  
+  .adds-hotword-images {
+    padding: 16px;
+  }
+  
+  .categories-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaShoppingBag, FaSearch, FaBars, FaFacebook, FaInstagram } from 'react-icons/fa';
+import { FaShoppingBag, FaSearch, FaFacebook, FaInstagram } from 'react-icons/fa';
 import { SiTiktok } from 'react-icons/si';
 import './Header.css';
 
@@ -114,36 +114,7 @@ const Header: React.FC<HeaderProps> = ({ onSearch, cartCount = 0 }) => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Navigation Bar - แยกจาก gradient */}
-      <nav className="navbar">
-        <div className="container">
-          <div className="nav-content">
-            {/* Categories */}
-            <div className="categories-dropdown">
-              <FaBars className="categories-icon" />
-              <span className="categories-text">หมวดหมู่สินค้า</span>
-            </div>
-
-            {/* Navigation Links */}
-            <div className="nav-links">
-              <a href="/" className="nav-link active">หน้าแรก</a>
-              <a href="/flash-sale" className="nav-link">Flash Sale</a>
-              <a href="/mall" className="nav-link">Shopee Mall</a>
-              <a href="/lifestyle" className="nav-link">Lifestyle</a>
-              <a href="/electronics" className="nav-link">อิเล็กทรอนิกส์</a>
-            </div>
-
-            {/* Promotions */}
-            <div className="nav-promotions">
-              <div className="promo-banner">
-                🔥 Flash Sale 50% Off!
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
+      </div>   
     </>
   );
 };

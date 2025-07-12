@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { Header } from './components/Header';
+import { BannerHotword } from './components/Banner-Hotword';
 import './App.css'
 
 function App() {
@@ -17,12 +18,8 @@ function App() {
         onSearch={handleSearch}
         cartCount={cartCount}
       />
+      <BannerHotword />
       
-      {/* ส่วนเนื้อหาหลักของเว็บไซต์จะอยู่ที่นี่ */}
-      <main style={{ minHeight: '80vh', padding: '20px', textAlign: 'center' }}>
-        <h1>🛍️ Welcome to Shopee Clone</h1>
-        <p>This is your e-commerce store homepage!</p>
-      </main>
     </>
   )
 }
