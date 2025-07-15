@@ -1,324 +1,78 @@
-/* ใช้ CSS Variables สำหรับ Shopee Theme */
-:root {
-  --shopee-primary: #ee4d2d;
-  --shopee-secondary: #f05533;
-  --shopee-light: #fff5f3;
-  --shopee-text: #333;
-  --shopee-gray: #f5f5f5;
-  --border-radius: 2px;
-  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --transition: all 0.3s ease;
+div{
+  display: block;
+  unicode-bidi: isolate;
 }
-
-/* Container */
+ul{
+  list-style-type: disc;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  padding-inline-start: 40px;
+  unicode-bidi: isolate;
+}
 .container {
-  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 1200px;
 }
-
-/* Main Section */
-.banner-hotword-section {
-  padding: 3px 0;
-  line-height: 0;
-  height: 100%;
-}
-
-.banner-hotword-wrapper {
+.adds-hotword{
   display: flex;
-  gap: 8px;
-  min-height: 235px;
+  line-height:0;
   max-height: 235px;
+  min-height: 235px;
 }
-
-/* Banner Carousel Area */
-.banner-carousel-area {
-  flex: 2;
-  position: relative;
-  border-radius: var(--border-radius);
+.adds-hotword-slide{
+  border-radius: .125rem;
+  border-bottom-left-radius: 2px;
+  border-top-left-radius: 2px;
+  box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.5);
+  flex-basis: 0;
+  flex-grow: 2;
+  flex-shrink: 1;
   overflow: hidden;
-  box-shadow: var(--box-shadow);
 }
-
-/* Carousel Section */
-.carousel-section {
-  width: 100%;
+.stardust-carousel{
   height: 100%;
-}
-
-.carousel-container {
   position: relative;
   width: 100%;
-  height: 235px;
-  overflow: hidden;
 }
-
-.carousel-slides {
+.stardust-carousel_item-list-wrapper{
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+.stardust-carousel_item-list{
+  bottom: 0;
   display: flex;
   height: 100%;
+  left: 0;
   margin: 0;
-  padding: 0;
-  list-style: none;
-  transition: transform 0.5s ease;
-}
-
-.carousel-slide {
-  flex-shrink: 0;
-  height: 100%;
-}
-
-.slide-link {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.slide-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.slide-link:hover .slide-image {
-  transform: scale(1.02);
-}
-
-/* Carousel Indicators */
-.carousel-indicators {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 8px;
-  z-index: 10;
-}
-
-.indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: none;
-  background-color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.indicator.active {
-  background-color: var(--shopee-primary);
-  transform: scale(1.2);
-}
-
-.indicator:hover {
-  background-color: rgba(255, 255, 255, 0.8);
-}
-
-/* Side Ads Area */
-.side-ads-area {
-  flex: 1;
-  flex-shrink: 0;
-}
-
-.side-ads {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  height: 100%;
-}
-
-.side-ad-item {
-  flex: 1;
-  border-radius: var(--border-radius);
   overflow: hidden;
-  box-shadow: var(--box-shadow);
-  transition: var(--transition);
-  display: block;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  touch-action: pan-y;
 }
-
-.side-ad-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.side-ad-image {
-  width: 100%;
+.stardust-carousel_item{
+  align-items: center;
+  align-self: center;
+  display: flex;
+  flex-shrink: 0;
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
+  justify-content: center;
+  list-style: none;
+  overflow: hidden;
 }
-
-.side-ad-item:hover .side-ad-image {
-  transform: scale(1.05);
-}
-
-/* Shortcuts Section */
-.shortcuts-section {
-  background-color: white;
-  padding: 10px 0;
-  border-bottom: 1px solid #e5e5e5;
-}
-
-.shortcuts-grid {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 16px;
-  padding: 0 3px;
-}
-
-.shortcut-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-decoration: none;
-  color: var(--shopee-text);
-  transition: var(--transition);
-  border-radius: var(--border-radius);
-}
-
-.shortcut-item:hover {
-  background-color: var(--shopee-light);
-  transform: translateY(-2px);
-}
-
-.shortcut-item-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.stardust-carousel_item-inner-wrapper{
+  height: 100%;
   width: 100%;
 }
-
-.shortcut-item-icon-container {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--shopee-gray);
-  border-radius: 50%;
-  transition: var(--transition);
+.stardust-carousel_item-inner-link{
+  display: block;
+  height: 100%;
 }
-
-.shortcut-item:hover .shortcut-item-icon-container {
-  background-color: var(--shopee-primary);
-  transform: scale(1.1);
+.stardust-carousel_item-inner-link-image_container{
+  position: relative;
 }
-
-.shortcut-item-icon {
-  width: 32px;
-  height: 32px;
-  background-position: center;
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.shortcut-item-label {
-  font-size: 12px;
-  text-align: center;
-  line-height: 1.3;
-  font-weight: 500;
-  max-width: 80px;
-  word-break: break-word;
-}
-
-.shortcut-item:hover .shortcut-item-label {
-  color: var(--shopee-primary);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .banner-hotword-wrapper {
-    flex-direction: column;
-    min-height: auto;
-  }
-  
-  .carousel-container {
-    height: 180px;
-  }
-  
-  .side-ads-area {
-    width: 100%;
-    margin-top: 8px;
-  }
-  
-  .side-ads {
-    flex-direction: row;
-    height: 80px;
-  }
-  
-  .side-ad-item {
-    flex: 1;
-  }
-  
-  .shortcuts-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 0 12px;
-  }
-  
-  .shortcuts-section {
-    padding: 16px 0;
-  }
-  
-  .shortcut-item {
-    padding: 5px 4px;
-  }
-  
-  .shortcut-item-icon-container {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .shortcut-item-icon {
-    width: 28px;
-    height: 28px;
-  }
-  
-  .shortcut-item-label {
-    font-size: 11px;
-    max-width: 70px;
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    padding: 0 12px;
-  }
-  
-  .banner-hotword-section {
-    padding: 16px 0;
-  }
-  
-  .carousel-container {
-    height: 150px;
-  }
-  
-  .side-ads {
-    height: 60px;
-    gap: 4px;
-  }
-  
-  .banner-hotword-wrapper {
-    gap: 4px;
-  }
-  
-  .shortcuts-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    padding: 0 8px;
-  }
-  
-  .shortcut-item-icon-container {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .shortcut-item-icon {
-    width: 24px;
-    height: 24px;
-  }
-  
-  .shortcut-item-label {
-    font-size: 10px;
-    max-width: 60px;
-  }
+.stardust-carousel_item-inner-link-image{
+  padding-top: 0;
 }

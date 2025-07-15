@@ -2,13 +2,14 @@ import React from 'react';
 import './MainSection.css';
 
 type MainSectionProps = {
-  children?: React.ReactNode;
+  title: string;
+  onClick?: () => void;
 };
 
-const MainSection: React.FC<MainSectionProps> = ({ children }) => {
+const MainSection: React.FC<MainSectionProps> = () => {
   return (
-    <div className='main-section-container'>
-      {children}
+    <div className='container'>
+      
     </div>
   );
 };

@@ -4,4 +4,4 @@
 
 export { default as BannerHotword } from './Banner-Hotword';
 export { default } from './Banner-Hotword';
-export type { BannerHotwordProps } from './Banner-Hotword';
+// export type { BannerHotwordProps } from './Banner-Hotword';

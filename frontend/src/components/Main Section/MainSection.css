@@ -1,21 +1,5 @@
-/* Simple main section container */
-.main-section-container {
-  width: 100%;
-  max-width: 1200px;
-  margin-left: auto;
+.container {
+  margin: auto;
   margin-right: auto;
-  padding: 20px 16px;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .main-section-container {
-    padding: 16px 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .main-section-container {
-    padding: 12px 8px;
-  }
+  width: 1200px;
 }
