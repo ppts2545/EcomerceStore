@@ -9,7 +9,7 @@ import java.util.List;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
-
+    
     // ค้นหาสินค้าตามชื่อ (case insensitive)
     List<Product> findByNameContainingIgnoreCase(String name);
     
