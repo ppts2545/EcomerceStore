@@ -21,7 +21,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     
     // ค้นหาสินค้าตามช่วงราคา
     @Query("SELECT p FROM Product p WHERE p.price BETWEEN :minPrice AND :maxPrice")
-    List<Product> findByPriceRange(@Param("minPrice") Double minPrice, @Param("maxPrice") Double maxPrice);
+    List<Product> findByPriceRange(@Param("minPrice") java.math.BigDecimal minPrice, @Param("maxPrice") java.math.BigDecimal maxPrice);
     
     // ดึงสินค้าล่าสุด (เรียงตาม id desc)
     @Query("SELECT p FROM Product p ORDER BY p.id DESC")
@@ -30,5 +30,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // ดึงสินค้าแนะนำ (4 รายการแรก)
     @Query(value = "SELECT * FROM products ORDER BY id LIMIT 4", nativeQuery = true)
     List<Product> findFeaturedProducts();
+    
+    // ดึงสินค้าที่ใกล้หมด (stock น้อยกว่า threshold)
+    List<Product> findByStockLessThan(Integer threshold);
+    
+    // ดึงสินค้าที่หมดแล้ว
+    List<Product> findByStock(Integer stock);
 
 }

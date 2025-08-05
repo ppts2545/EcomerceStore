@@ -1,22 +1,31 @@
 package com.example.E_commerceStore.WebApp.model;
 
+import java.math.BigDecimal;
+
 public class Product {
     private Long id;
+    
     private String name;
+    
     private String description;
-    private double price;
+    
+    private BigDecimal price;
+    
     private String imageUrl;
+    
+    private Integer stock = 0;
 
     // Default constructor
     public Product() {}
 
     // Constructor with parameters
-    public Product(Long id, String name, String description, double price, String imageUrl) {
+    public Product(Long id, String name, String description, BigDecimal price, String imageUrl, Integer stock) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.price = price;
         this.imageUrl = imageUrl;
+        this.stock = stock;
     }
 
     // Getters and Setters
@@ -44,11 +53,11 @@ public class Product {
         this.description = description;
     }
 
-    public double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
 
@@ -58,5 +67,13 @@ public class Product {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+    
+    public Integer getStock() {
+        return stock;
+    }
+    
+    public void setStock(Integer stock) {
+        this.stock = stock;
     }
 }

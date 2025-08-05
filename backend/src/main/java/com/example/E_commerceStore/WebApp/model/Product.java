@@ -21,15 +21,19 @@ public class Product {
     
     private String imageUrl;
     
+    @Column(nullable = true)
+    private Integer stock = 0;
+    
     // Constructors
     public Product() {}
     
-    public Product(Long id, String name, String description, Double price, String imageUrl) {
+    public Product(Long id, String name, String description, BigDecimal price, String imageUrl, Integer stock) {
         this.id = id;
         this.name = name;
         this.description = description;
-        this.price = BigDecimal.valueOf(price);
+        this.price = price;
         this.imageUrl = imageUrl;
+        this.stock = stock;
     }
     
     // Getters และ Setters
@@ -47,4 +51,7 @@ public class Product {
     
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    
+    public Integer getStock() { return stock; }
+    public void setStock(Integer stock) { this.stock = stock; }
 }
