@@ -3,6 +3,7 @@ package com.example.E_commerceStore.WebApp.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -17,10 +18,14 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     @Autowired
     private OAuth2SuccessHandler oauth2SuccessHandler;
+    
+    @Autowired
+    private CustomLogoutSuccessHandler customLogoutSuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -64,7 +69,7 @@ public class SecurityConfig {
             )
             .logout(logout -> logout
                 .logoutUrl("/api/auth/logout")
-                .logoutSuccessUrl("/api/auth/login?logout=true")
+                .logoutSuccessHandler(customLogoutSuccessHandler)
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID", "ECOMMERCE_SESSION")
             )
@@ -72,11 +77,10 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .maximumSessions(5) // อนุญาตหลาย device
                 .maxSessionsPreventsLogin(false)
-                .and()
-                .sessionFixation().migrateSession() // ป้องกัน session fixation
-                .invalidSessionUrl("/api/auth/login?expired=true")
             )
-            .headers(headers -> headers.frameOptions().sameOrigin());
+            .headers(headers -> headers
+                .frameOptions().sameOrigin()
+            );
         
         return http.build();
     }

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import Header from './components/Header/Header'
 import BannerHotword from './components/Banner-Hotword/Banner-Hotword'
-import CategorySection from './components/Category-innerMain-Section/Category-Section'
+import CategorySection from './components/Category-innerMain-Section/CategorySection'
 import AddProductForm from './components/Add Product/AddProductForm'
 import EditProductForm from './components/Add Product/EditProductForm'
 import AuthModal from './components/Auth/AuthModal'
@@ -169,11 +169,19 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
-    AuthService.logout();
-    setUser(null);
-    setCartCount(0); // รีเซ็ต cart count เมื่อ logout
-    alert('✅ ออกจากระบบเรียบร้อยแล้ว');
+  const handleLogout = async () => {
+    try {
+      await AuthService.logout();
+      setUser(null);
+      setCartCount(0); // รีเซ็ต cart count เมื่อ logout
+      // The AuthService.logout() will handle the page reload
+    } catch {
+      console.error('Logout error');
+      // Fallback logout
+      setUser(null);
+      setCartCount(0);
+      alert('✅ ออกจากระบบเรียบร้อยแล้ว');
+    }
   };
 
   // 🛒 Cart functions

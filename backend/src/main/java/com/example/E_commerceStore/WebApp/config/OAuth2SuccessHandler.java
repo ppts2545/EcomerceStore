@@ -91,7 +91,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             request.setAttribute("authenticatedUser", user);
             
             // Redirect to frontend with user info and token
-            String frontendUrl = "http://localhost:5174/auth/success?token=" + token +
+            String frontendUrl = "http://localhost:5173/auth/success?token=" + token +
                                "&email=" + email + 
                                "&name=" + name;
             
@@ -103,7 +103,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             e.printStackTrace();
             // Redirect to frontend with error
             getRedirectStrategy().sendRedirect(request, response, 
-                "http://localhost:5174/auth/error?error=oauth2_login_failed");
+                "http://localhost:5173/auth/error?error=oauth2_login_failed");
         }
     }
 }

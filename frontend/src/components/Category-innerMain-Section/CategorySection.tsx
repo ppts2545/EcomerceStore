@@ -55,7 +55,6 @@ const CategorySection: React.FC<CategorySectionProps> = () => {
           ))}
         </div>
 
-        {/* 🎯 Featured Categories */}
         <div className="featured-categories">
           <h3 className="featured-title">หมวดหมู่แนะนำ</h3>
           <div className="featured-grid">

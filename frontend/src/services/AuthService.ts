@@ -110,18 +110,48 @@ class AuthService {
   // 🚪 Logout
   async logout(): Promise<void> {
     try {
-      await fetch(`${API_BASE_URL}/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-    } catch (error) {
-      console.error('❌ Logout error:', error);
-    } finally {
-      // Clear local state regardless of API call success
+      // Clear local state first
       this.currentUser = null;
       this.token = null;
       localStorage.removeItem('user');
       localStorage.removeItem('token');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userName');
+      
+      // Clear all cookies and session storage
+      sessionStorage.clear();
+      
+      // Clear Google OAuth cookies by opening logout URL in hidden iframe
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = 'https://accounts.google.com/logout';
+      document.body.appendChild(iframe);
+      
+      // Remove iframe after a short delay
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+      
+      // Call backend logout to clear server session
+      try {
+        await fetch(`${API_BASE_URL}/logout`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+      } catch {
+        console.log('Backend logout call failed, continuing with client logout');
+      }
+      
+      // Force complete page reload to clear all cached OAuth states
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
+      
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      // Fallback: force reload
+      window.location.reload();
     }
   }
 
