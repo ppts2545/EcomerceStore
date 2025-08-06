@@ -1,7 +1,9 @@
 package com.example.E_commerceStore.WebApp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -25,8 +27,18 @@ public class Product {
     @Column(nullable = true)
     private Integer stock = 0;
     
+    @Column(nullable = true)
+    private String category;
+    
+    @Column(nullable = true)
+    private LocalDateTime createdAt = LocalDateTime.now();
+    
+    @Column(nullable = true)
+    private LocalDateTime updatedAt = LocalDateTime.now();
+    
     // One-to-Many relationship with CartItem
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore // Prevent circular reference
     private List<CartItem> cartItems;
     
     // Constructors
@@ -39,6 +51,8 @@ public class Product {
         this.price = price;
         this.imageUrl = imageUrl;
         this.stock = stock;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
     
     // Getters และ Setters
@@ -58,7 +72,19 @@ public class Product {
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     
     public Integer getStock() { return stock; }
-    public void setStock(Integer stock) { this.stock = stock; }
+    public void setStock(Integer stock) { 
+        this.stock = stock;
+        this.updatedAt = LocalDateTime.now();
+    }
+    
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+    
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     
     public List<CartItem> getCartItems() { return cartItems; }
     public void setCartItems(List<CartItem> cartItems) { this.cartItems = cartItems; }

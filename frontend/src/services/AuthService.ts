@@ -127,37 +127,37 @@ class AuthService {
 
   // 👤 Get Current User
   async getCurrentUser(): Promise<User | null> {
-    // First check if we have user in memory
+    try {
+      // Always verify with backend first for session-based auth
+      const response = await fetch(`${API_BASE_URL}/me`, {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.user) {
+          this.currentUser = data.user;
+          localStorage.setItem('user', JSON.stringify(this.currentUser));
+          return this.currentUser;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error verifying user session:', error);
+    }
+
+    // Fallback to localStorage if backend fails
     if (this.currentUser) {
       return this.currentUser;
     }
 
-    // Then check localStorage
     const storedUser = localStorage.getItem('user');
-    const storedToken = localStorage.getItem('token');
-    
-    if (storedUser && storedToken) {
+    if (storedUser) {
       try {
         this.currentUser = JSON.parse(storedUser);
-        this.token = storedToken;
-        
-        // Verify with backend
-        const response = await fetch(`${API_BASE_URL}/me`, {
-          credentials: 'include'
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            this.currentUser = data.user;
-            localStorage.setItem('user', JSON.stringify(this.currentUser));
-            return this.currentUser;
-          }
-        }
+        return this.currentUser;
       } catch (error) {
-        console.error('❌ Error verifying user session:', error);
-        // Clear invalid session
-        this.logout();
+        console.error('❌ Error parsing stored user:', error);
+        localStorage.removeItem('user');
       }
     }
 
@@ -246,6 +246,90 @@ class AuthService {
   isAdmin(): boolean {
     const user = this.getUser();
     return user?.role === 'ADMIN';
+  }
+
+  // 💓 Keep Session Alive - เรียกทุก 30 นาที
+  async keepSessionAlive(): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/keep-alive`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.user) {
+        this.currentUser = data.user;
+        console.log('✅ Session refreshed successfully');
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('❌ Keep session alive error:', error);
+      return false;
+    }
+  }
+
+  // 📊 Get Session Info
+  async getSessionInfo(): Promise<{
+    success: boolean;
+    isLoggedIn: boolean;
+    sessionId?: string;
+    maxInactiveInterval?: number;
+    user?: User;
+  } | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/session-info`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+      
+      return await response.json();
+    } catch (error) {
+      console.error('❌ Get session info error:', error);
+      return null;
+    }
+  }
+
+  // 🔄 Auto Keep-Alive Setup - เริ่มต้น auto refresh
+  startAutoKeepAlive(): void {
+    // เรียก keep-alive ทุก 30 นาที (1800000 ms)
+    setInterval(async () => {
+      const currentUser = await this.getCurrentUser();
+      if (currentUser) {
+        await this.keepSessionAlive();
+      }
+    }, 30 * 60 * 1000); // 30 minutes
+  }
+
+  // 🛑 Stop Auto Keep-Alive
+  private keepAliveInterval: number | null = null;
+
+  startAutoKeepAliveWithControl(): void {
+    this.stopAutoKeepAlive(); // หยุดที่เก่าก่อน
+    
+    this.keepAliveInterval = window.setInterval(async () => {
+      const sessionInfo = await this.getSessionInfo();
+      if (sessionInfo?.isLoggedIn) {
+        await this.keepSessionAlive();
+      } else {
+        this.stopAutoKeepAlive(); // หยุดถ้าไม่ได้ล็อกอิน
+      }
+    }, 30 * 60 * 1000); // 30 minutes
+  }
+
+  stopAutoKeepAlive(): void {
+    if (this.keepAliveInterval) {
+      window.clearInterval(this.keepAliveInterval);
+      this.keepAliveInterval = null;
+    }
   }
 }
 

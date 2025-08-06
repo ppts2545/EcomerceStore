@@ -111,6 +111,13 @@ function App() {
     fetchProducts();
     // Load current user from localStorage
     loadCurrentUser();
+    // เริ่มต้น Auto Keep-Alive สำหรับ Session
+    AuthService.startAutoKeepAliveWithControl();
+    
+    // Cleanup function
+    return () => {
+      AuthService.stopAutoKeepAlive();
+    };
   }, []);
 
   // 🔐 Load current user
@@ -196,7 +203,7 @@ function App() {
     }
 
     try {
-      await CartService.addToCart(productId.toString(), quantity);
+      await CartService.addToCart(productId, quantity);
       await updateCartCount();
       alert('✅ เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว!');
     } catch (error) {

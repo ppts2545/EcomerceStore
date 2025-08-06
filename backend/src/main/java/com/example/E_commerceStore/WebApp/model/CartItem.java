@@ -1,5 +1,6 @@
 package com.example.E_commerceStore.WebApp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,7 +14,13 @@ public class CartItem {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore // Prevent circular reference
     private User user;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cart_id")
+    @JsonIgnore // Prevent circular reference
+    private Cart cart;
     
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "product_id", nullable = false)
@@ -48,6 +55,9 @@ public class CartItem {
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
     
+    public Cart getCart() { return cart; }
+    public void setCart(Cart cart) { this.cart = cart; }
+
     public Product getProduct() { return product; }
     public void setProduct(Product product) { this.product = product; }
     

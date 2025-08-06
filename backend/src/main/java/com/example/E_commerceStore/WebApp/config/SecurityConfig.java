@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -36,6 +37,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
+                .requestMatchers("/api/session-cart/**").permitAll() // Session-based cart ไม่ต้องมี role
+                .requestMatchers("/api/debug/**").permitAll() // Debug endpoints
                 .requestMatchers("/oauth2/**").permitAll()
                 .requestMatchers("/login/oauth2/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
@@ -56,18 +59,22 @@ public class SecurityConfig {
             .oauth2Login(oauth2 -> oauth2
                 .loginPage("/oauth2/authorization/google") 
                 .successHandler(oauth2SuccessHandler)
-                .failureUrl("http://localhost:5173/auth/error")
+                .failureUrl("http://localhost:5174/auth/error")
                 .permitAll()
             )
             .logout(logout -> logout
                 .logoutUrl("/api/auth/logout")
                 .logoutSuccessUrl("/api/auth/login?logout=true")
                 .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
+                .deleteCookies("JSESSIONID", "ECOMMERCE_SESSION")
             )
             .sessionManagement(session -> session
-                .maximumSessions(1)
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .maximumSessions(5) // อนุญาตหลาย device
                 .maxSessionsPreventsLogin(false)
+                .and()
+                .sessionFixation().migrateSession() // ป้องกัน session fixation
+                .invalidSessionUrl("/api/auth/login?expired=true")
             )
             .headers(headers -> headers.frameOptions().sameOrigin());
         
@@ -82,8 +89,22 @@ public class SecurityConfig {
             "http://localhost:5174"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization", 
+            "Content-Type", 
+            "X-Requested-With",
+            "Accept",
+            "Origin",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers"
+        ));
+        configuration.setExposedHeaders(Arrays.asList(
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Credentials",
+            "Set-Cookie"
+        ));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

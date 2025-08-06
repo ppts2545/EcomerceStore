@@ -36,5 +36,24 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     
     // ดึงสินค้าที่หมดแล้ว
     List<Product> findByStock(Integer stock);
+    
+    // สำหรับระบบแนะนำสินค้า - ดึงสินค้าล่าสุด 10 รายการ
+    List<Product> findTop10ByOrderByCreatedAtDesc();
+    
+    // ดึงสินค้าตามหมวดหมู่ (10 รายการล่าสุด)
+    List<Product> findTop10ByCategoryOrderByCreatedAtDesc(String category);
+    
+    // ดึงสินค้าตามหมวดหมู่หลายๆ หมวด (10 รายการล่าสุด)
+    List<Product> findTop10ByCategoryInOrderByCreatedAtDesc(List<String> categories);
+    
+    // ดึงสินค้าในหมวดเดียวกัน ยกเว้นสินค้าที่ระบุ (5 รายการ)
+    List<Product> findTop5ByCategoryAndIdNotOrderByCreatedAtDesc(String category, Long excludeId);
+    
+    // ค้นหาสินค้าตามหมวดหมู่
+    List<Product> findByCategory(String category);
+    
+    // ดึงหมวดหมู่ทั้งหมดที่มีสินค้า
+    @Query("SELECT DISTINCT p.category FROM Product p ORDER BY p.category")
+    List<String> findDistinctCategories();
 
 }

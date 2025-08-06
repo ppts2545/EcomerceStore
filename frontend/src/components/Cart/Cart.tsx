@@ -4,14 +4,15 @@ import CartService from '../../services/CartService';
 import AuthService, { type User } from '../../services/AuthService';
 
 interface CartItem {
-  id: string;
-  productId: string;
+  id: number;
+  productId: number;
   productName: string;
   productImage: string;
   price: number;
   quantity: number;
   stock: number;
   description?: string;
+  totalPrice?: number;
 }
 
 interface CartProps {
@@ -48,7 +49,7 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const updateQuantity = async (itemId: string, newQuantity: number) => {
+  const updateQuantity = async (itemId: number, newQuantity: number) => {
     if (newQuantity < 1) {
       await removeItem(itemId);
       return;
@@ -66,7 +67,7 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const removeItem = async (itemId: string) => {
+  const removeItem = async (itemId: number) => {
     try {
       await CartService.removeItem(itemId);
       setCartItems(items => items.filter(item => item.id !== itemId));
@@ -141,18 +142,25 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
                     
                     <div className="item-details">
                       <h4 className="item-name">{item.productName}</h4>
-                      <p className="item-price">฿{item.price.toLocaleString()}</p>
+                      {item.description && (
+                        <p className="item-description">{item.description}</p>
+                      )}
+                      <div className="item-price-info">
+                        <span className="unit-price">฿{item.price.toLocaleString()} / ชิ้น</span>
+                        <span className="stock-info">คงเหลือ: {item.stock} ชิ้น</span>
+                      </div>
                       
                       <div className="quantity-controls">
                         <button 
-                          className="qty-btn"
+                          className="qty-btn minus"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
                         >
                           −
                         </button>
                         <span className="quantity">{item.quantity}</span>
                         <button 
-                          className="qty-btn"
+                          className="qty-btn plus"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           disabled={item.quantity >= item.stock}
                         >
@@ -161,7 +169,7 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
                       </div>
                       
                       <div className="item-total">
-                        รวม: ฿{(item.price * item.quantity).toLocaleString()}
+                        <strong>รวม: ฿{(item.price * item.quantity).toLocaleString()}</strong>
                       </div>
                     </div>
                     

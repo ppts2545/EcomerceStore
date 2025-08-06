@@ -1,19 +1,24 @@
 package com.example.E_commerceStore.WebApp.controller;
 
+import com.example.E_commerceStore.WebApp.model.Cart;
 import com.example.E_commerceStore.WebApp.model.CartItem;
+import com.example.E_commerceStore.WebApp.model.Product;
 import com.example.E_commerceStore.WebApp.model.User;
 import com.example.E_commerceStore.WebApp.service.CartService;
 import com.example.E_commerceStore.WebApp.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/cart")
-@CrossOrigin(origins = "http://localhost:5174")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"})
 public class CartController {
     
     @Autowired
@@ -22,7 +27,9 @@ public class CartController {
     @Autowired
     private UserService userService;
     
-    // เพิ่มสินค้าลงตะกร้า
+    /**
+     * เพิ่มสินค้าลงตะกร้า
+     */
     @PostMapping("/add")
     public ResponseEntity<?> addToCart(@RequestBody AddToCartRequest request) {
         try {
@@ -40,29 +47,40 @@ public class CartController {
         }
     }
     
-    // ดูตะกร้าของผู้ใช้
+    /**
+     * ดูตะกร้าของผู้ใช้ (พร้อมข้อมูลสรุป)
+     */
     @GetMapping("/{userId}")
     public ResponseEntity<?> getCart(@PathVariable Long userId) {
-        Optional<User> userOpt = userService.findById(userId);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("User not found");
+        try {
+            Optional<User> userOpt = userService.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body("User not found");
+            }
+            
+            User user = userOpt.get();
+            Cart cart = cartService.getUserCart(user);
+            
+            // สร้างข้อมูลสรุปตะกร้า
+            Map<String, Object> cartSummary = new HashMap<>();
+            cartSummary.put("cart", cart);
+            cartSummary.put("items", cart.getCartItems());
+            cartSummary.put("totalItems", cart.getTotalItems());
+            cartSummary.put("totalAmount", cart.getTotalAmount());
+            cartSummary.put("isEmpty", cart.isEmpty());
+            
+            return ResponseEntity.ok(cartSummary);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error retrieving cart: " + e.getMessage());
         }
-        
-        User user = userOpt.get();
-        List<CartItem> cartItems = cartService.getCartItems(user);
-        
-        CartResponse response = new CartResponse();
-        response.setCartItems(cartItems);
-        response.setTotalItems(cartService.getCartItemCount(user));
-        response.setTotalAmount(cartService.getCartTotal(user));
-        
-        return ResponseEntity.ok(response);
     }
     
-    // อัปเดตปริมาณในตะกร้า
-    @PutMapping("/update/{cartItemId}")
+    /**
+     * อัปเดตปริมาณสินค้าในตะกร้า
+     */
+    @PutMapping("/item/{cartItemId}")
     public ResponseEntity<?> updateCartItem(
-            @PathVariable Long cartItemId, 
+            @PathVariable Long cartItemId,
             @RequestBody UpdateCartRequest request) {
         try {
             Optional<User> userOpt = userService.findById(request.getUserId());
@@ -79,10 +97,12 @@ public class CartController {
         }
     }
     
-    // ลบสินค้าออกจากตะกร้า
-    @DeleteMapping("/remove/{cartItemId}")
+    /**
+     * ลบสินค้าออกจากตะกร้า
+     */
+    @DeleteMapping("/item/{cartItemId}")
     public ResponseEntity<?> removeFromCart(
-            @PathVariable Long cartItemId, 
+            @PathVariable Long cartItemId,
             @RequestParam Long userId) {
         try {
             Optional<User> userOpt = userService.findById(userId);
@@ -93,47 +113,92 @@ public class CartController {
             User user = userOpt.get();
             cartService.removeFromCart(user, cartItemId);
             
-            return ResponseEntity.ok("Item removed from cart");
+            return ResponseEntity.ok("Item removed from cart successfully");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
     
-    // ล้างตะกร้า
-    @DeleteMapping("/clear/{userId}")
+    /**
+     * ล้างตะกร้าทั้งหมด
+     */
+    @DeleteMapping("/{userId}")
     public ResponseEntity<?> clearCart(@PathVariable Long userId) {
-        Optional<User> userOpt = userService.findById(userId);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("User not found");
+        try {
+            Optional<User> userOpt = userService.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body("User not found");
+            }
+            
+            User user = userOpt.get();
+            cartService.clearCart(user);
+            
+            return ResponseEntity.ok("Cart cleared successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        
-        User user = userOpt.get();
-        cartService.clearCart(user);
-        
-        return ResponseEntity.ok("Cart cleared");
     }
     
-    // นับจำนวนสินค้าในตะกร้า
-    @GetMapping("/count/{userId}")
+    /**
+     * นับจำนวนสินค้าในตะกร้า
+     */
+    @GetMapping("/{userId}/count")
     public ResponseEntity<Integer> getCartCount(@PathVariable Long userId) {
-        Optional<User> userOpt = userService.findById(userId);
-        if (userOpt.isEmpty()) {
+        try {
+            Optional<User> userOpt = userService.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            
+            User user = userOpt.get();
+            Cart cart = cartService.getUserCart(user);
+            
+            return ResponseEntity.ok(cart.getTotalItems());
+        } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
-        
-        User user = userOpt.get();
-        Integer count = cartService.getCartItemCount(user);
-        
-        return ResponseEntity.ok(count != null ? count : 0);
     }
     
-    // DTOs
+    /**
+     * รับสินค้าแนะนำสำหรับผู้ใช้
+     */
+    @GetMapping("/{userId}/recommendations")
+    public ResponseEntity<List<Product>> getRecommendations(@PathVariable Long userId) {
+        try {
+            Optional<User> userOpt = userService.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            
+            User user = userOpt.get();
+            List<Product> recommendations = cartService.getRecommendedProducts(user);
+            
+            return ResponseEntity.ok(recommendations);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
+     * รับสินค้าที่ซื้อพร้อมกันบ่อย
+     */
+    @GetMapping("/frequently-bought-together/{productId}")
+    public ResponseEntity<List<Product>> getFrequentlyBoughtTogether(@PathVariable Long productId) {
+        try {
+            List<Product> products = cartService.getFrequentlyBoughtTogether(productId);
+            return ResponseEntity.ok(products);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    // Request DTOs
     public static class AddToCartRequest {
         private Long userId;
         private Long productId;
         private Integer quantity;
         
-        // Getters and setters
+        // Getters and Setters
         public Long getUserId() { return userId; }
         public void setUserId(Long userId) { this.userId = userId; }
         
@@ -148,27 +213,11 @@ public class CartController {
         private Long userId;
         private Integer quantity;
         
-        // Getters and setters
+        // Getters and Setters
         public Long getUserId() { return userId; }
         public void setUserId(Long userId) { this.userId = userId; }
         
         public Integer getQuantity() { return quantity; }
         public void setQuantity(Integer quantity) { this.quantity = quantity; }
-    }
-    
-    public static class CartResponse {
-        private List<CartItem> cartItems;
-        private Integer totalItems;
-        private BigDecimal totalAmount;
-        
-        // Getters and setters
-        public List<CartItem> getCartItems() { return cartItems; }
-        public void setCartItems(List<CartItem> cartItems) { this.cartItems = cartItems; }
-        
-        public Integer getTotalItems() { return totalItems; }
-        public void setTotalItems(Integer totalItems) { this.totalItems = totalItems; }
-        
-        public BigDecimal getTotalAmount() { return totalAmount; }
-        public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
     }
 }

@@ -3,10 +3,13 @@ package com.example.E_commerceStore.WebApp.controller;
 import com.example.E_commerceStore.WebApp.model.User;
 import com.example.E_commerceStore.WebApp.service.UserService;
 import com.example.E_commerceStore.WebApp.util.JwtUtil;
+import com.example.E_commerceStore.WebApp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +25,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:5174", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}, allowCredentials = "true")
 public class AuthController {
 
     @Autowired
@@ -30,6 +33,9 @@ public class AuthController {
     
     @Autowired
     private JwtUtil jwtUtil;
+    
+    @Autowired
+    private UserRepository userRepository;
 
     // 📝 Registration
     @PostMapping("/register")
@@ -111,6 +117,26 @@ public class AuthController {
     public ResponseEntity<?> getCurrentUser(HttpSession session) {
         User user = (User) session.getAttribute("user");
         
+        // If no user in session, check OAuth2 authentication
+        if (user == null) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof OAuth2User) {
+                OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+                String email = oauth2User.getAttribute("email");
+                
+                if (email != null) {
+                    Optional<User> oauthUser = userRepository.findByEmail(email);
+                    if (oauthUser.isPresent()) {
+                        user = oauthUser.get();
+                        // Store in session for future requests
+                        session.setAttribute("user", user);
+                        session.setAttribute("userId", user.getId());
+                        System.out.println("✅ OAuth2 user found and stored in session: " + email);
+                    }
+                }
+            }
+        }
+        
         if (user == null) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -137,7 +163,52 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    // 🔑 Forgot Password
+    // � Keep Session Alive - เรียกเพื่อรีเฟรช Session
+    @PostMapping("/keep-alive")
+    public ResponseEntity<?> keepSessionAlive(HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        
+        if (user == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "ไม่ได้เข้าสู่ระบบ");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        
+        // รีเฟรช session timeout
+        session.setMaxInactiveInterval(7 * 24 * 60 * 60); // 7 วัน
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Session refreshed successfully");
+        response.put("sessionId", session.getId());
+        response.put("maxInactiveInterval", session.getMaxInactiveInterval());
+        response.put("user", createUserResponse(user));
+        
+        return ResponseEntity.ok(response);
+    }
+
+    // 📊 Session Info - ดูข้อมูล Session
+    @GetMapping("/session-info")
+    public ResponseEntity<?> getSessionInfo(HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("sessionId", session.getId());
+        response.put("isLoggedIn", user != null);
+        response.put("maxInactiveInterval", session.getMaxInactiveInterval());
+        response.put("lastAccessedTime", session.getLastAccessedTime());
+        response.put("creationTime", session.getCreationTime());
+        
+        if (user != null) {
+            response.put("user", createUserResponse(user));
+        }
+        
+        return ResponseEntity.ok(response);
+    }
+
+    // �🔑 Forgot Password
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         try {

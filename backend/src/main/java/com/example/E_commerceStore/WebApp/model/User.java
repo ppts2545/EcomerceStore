@@ -1,5 +1,6 @@
 package com.example.E_commerceStore.WebApp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -68,7 +69,12 @@ public class User {
     private String oauth2ProviderId; // OAuth2 user ID from provider
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore // Prevent circular reference
     private List<CartItem> cartItems;
+    
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore // Prevent circular reference
+    private Cart cart;
     
     // TODO: Add Order relationship when Order entity is created
     // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -115,9 +121,6 @@ public class User {
     public LocalDateTime getLastLoginAt() { return lastLoginAt; }
     public void setLastLoginAt(LocalDateTime lastLoginAt) { this.lastLoginAt = lastLoginAt; }
     
-    public List<CartItem> getCartItems() { return cartItems; }
-    public void setCartItems(List<CartItem> cartItems) { this.cartItems = cartItems; }
-    
     // Reset token getters/setters
     public String getResetToken() { return resetToken; }
     public void setResetToken(String resetToken) { this.resetToken = resetToken; }
@@ -145,6 +148,12 @@ public class User {
     
     public String getOauth2ProviderId() { return oauth2ProviderId; }
     public void setOauth2ProviderId(String oauth2ProviderId) { this.oauth2ProviderId = oauth2ProviderId; }
+    
+    public List<CartItem> getCartItems() { return cartItems; }
+    public void setCartItems(List<CartItem> cartItems) { this.cartItems = cartItems; }
+    
+    public Cart getCart() { return cart; }
+    public void setCart(Cart cart) { this.cart = cart; }
     
     // TODO: Add Order getters/setters when Order entity is created
     // public List<Order> getOrders() { return orders; }

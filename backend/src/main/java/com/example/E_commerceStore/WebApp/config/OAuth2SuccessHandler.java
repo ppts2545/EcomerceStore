@@ -77,8 +77,21 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             // Generate JWT token
             String token = jwtUtil.generateToken(user.getEmail());
             
+            // 🔑 เก็บ User ใน Session หลังจาก Spring Security จัดการ session fixation แล้ว
+            // เก็บ user ใน session ที่ใหม่หลังจาก session fixation protection
+            request.getSession().setAttribute("user", user);
+            System.out.println("🔐 User stored in session: " + user.getEmail());
+            System.out.println("📊 Session ID: " + request.getSession().getId());
+            
+            // Also store user ID for alternative lookup
+            request.getSession().setAttribute("userId", user.getId());
+            System.out.println("🆔 User ID stored in session: " + user.getId());
+            
+            // Store user in request attributes as well for immediate access
+            request.setAttribute("authenticatedUser", user);
+            
             // Redirect to frontend with user info and token
-            String frontendUrl = "http://localhost:5173/auth/success?token=" + token +
+            String frontendUrl = "http://localhost:5174/auth/success?token=" + token +
                                "&email=" + email + 
                                "&name=" + name;
             
@@ -90,7 +103,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             e.printStackTrace();
             // Redirect to frontend with error
             getRedirectStrategy().sendRedirect(request, response, 
-                "http://localhost:5173/auth/error?error=oauth2_login_failed");
+                "http://localhost:5174/auth/error?error=oauth2_login_failed");
         }
     }
 }
