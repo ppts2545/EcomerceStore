@@ -2,6 +2,7 @@ package com.example.E_commerceStore.WebApp.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -23,6 +24,10 @@ public class Product {
     
     @Column(nullable = true)
     private Integer stock = 0;
+    
+    // One-to-Many relationship with CartItem
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<CartItem> cartItems;
     
     // Constructors
     public Product() {}
@@ -54,4 +59,7 @@ public class Product {
     
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
+    
+    public List<CartItem> getCartItems() { return cartItems; }
+    public void setCartItems(List<CartItem> cartItems) { this.cartItems = cartItems; }
 }

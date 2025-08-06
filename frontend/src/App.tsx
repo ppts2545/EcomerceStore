@@ -5,6 +5,10 @@ import BannerHotword from './components/Banner-Hotword/Banner-Hotword'
 import CategorySection from './components/Category-innerMain-Section/Category-Section'
 import AddProductForm from './components/Add Product/AddProductForm'
 import EditProductForm from './components/Add Product/EditProductForm'
+import AuthModal from './components/Auth/AuthModal'
+import Cart from './components/Cart/Cart'
+import AuthService, { type User } from './services/AuthService'
+import CartService from './services/CartService'
 
 interface Product {
   id: number;
@@ -28,6 +32,14 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [productQuantity, setProductQuantity] = useState(1); // เพิ่ม state สำหรับปริมาณสินค้า
+  
+  // 🔐 Authentication states
+  const [user, setUser] = useState<User | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // 🛒 Cart states
+  const [showCart, setShowCart] = useState(false);
 
   // 🛣️ ตรวจสอบว่าอยู่ในหน้า Admin หรือไม่
   const isAdminPage = currentPath === '/admin';
@@ -97,7 +109,115 @@ function App() {
   // ✅ เรียก API เพื่อดึงข้อมูลสินค้า
   useEffect(() => {
     fetchProducts();
+    // Load current user from localStorage
+    loadCurrentUser();
   }, []);
+
+  // 🔐 Load current user
+  const loadCurrentUser = async () => {
+    try {
+      const currentUser = await AuthService.getCurrentUser();
+      setUser(currentUser);
+    } catch (error) {
+      console.error('Error loading user:', error);
+    }
+  };
+
+  // 🔐 Authentication handlers
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      const response = await AuthService.login({ email, password });
+      
+      if (response.success && response.user) {
+        setUser(response.user);
+        setShowAuthModal(false);
+        alert(`✅ ยินดีต้อนรับ ${response.user.firstName}!`);
+      } else {
+        throw new Error(response.message || 'การเข้าสู่ระบบล้มเหลว');
+      }
+    } catch (error) {
+      throw error; // Re-throw to let AuthModal handle the error display
+    }
+  };
+
+  const handleRegister = async (userData: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber?: string;
+  }) => {
+    try {
+      const response = await AuthService.register(userData);
+      
+      if (response.success && response.user) {
+        setUser(response.user);
+        setShowAuthModal(false);
+        alert(`✅ สมัครสมาชิกสำเร็จ! ยินดีต้อนรับ ${response.user.firstName}!`);
+      } else {
+        throw new Error(response.message || 'การสมัครสมาชิกล้มเหลว');
+      }
+    } catch (error) {
+      throw error; // Re-throw to let AuthModal handle the error display
+    }
+  };
+
+  const handleLogout = () => {
+    AuthService.logout();
+    setUser(null);
+    setCartCount(0); // รีเซ็ต cart count เมื่อ logout
+    alert('✅ ออกจากระบบเรียบร้อยแล้ว');
+  };
+
+  // 🛒 Cart functions
+  const updateCartCount = async () => {
+    try {
+      const count = await CartService.getCartCount();
+      setCartCount(count);
+    } catch (error) {
+      console.error('Error updating cart count:', error);
+    }
+  };
+
+  const loadCartItems = useCallback(async () => {
+    if (!user) return;
+    try {
+      await CartService.getCartItems();
+    } catch (error) {
+      console.error('Error loading cart items:', error);
+    }
+  }, [user]);
+
+  const handleAddToCart = async (productId: number, quantity: number = 1) => {
+    if (!user) {
+      setShowAuthModal(true);
+      alert('กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า');
+      return;
+    }
+
+    try {
+      await CartService.addToCart(productId.toString(), quantity);
+      await updateCartCount();
+      alert('✅ เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว!');
+    } catch (error) {
+      alert('❌ ไม่สามารถเพิ่มสินค้าลงตะกร้าได้');
+    }
+  };
+
+  // 🔄 Reset productQuantity เมื่อเปลี่ยนสินค้า
+  useEffect(() => {
+    setProductQuantity(1);
+  }, [currentPath]);
+
+  // 🛒 Load cart when user changes
+  useEffect(() => {
+    if (user) {
+      loadCartItems();
+      updateCartCount();
+    } else {
+      setCartCount(0);
+    }
+  }, [user, loadCartItems]);
 
   const fetchProducts = async () => {
     try {
@@ -114,7 +234,7 @@ function App() {
       console.log('✅ Products loaded:', data);
     } catch (error) {
       console.error('❌ Error fetching products:', error);
-      setError('Failed to load products. Make sure backend is running on port 8081.');
+      setError('Failed to load products. Make sure backend is running on port 8082.');
     } finally {
       setLoading(false);
     }
@@ -136,10 +256,7 @@ function App() {
     console.log(`🔍 Search "${query}" found ${filtered.length} products`);
   };
 
-  // ✅ Add to cart functionality
-  const handleAddToCart = () => {
-    setCartCount(prev => prev + 1);
-  };
+
 
   // ✏️ Toggle Edit Mode - ทำงานเฉพาะใน /admin
   const handleToggleEditMode = () => {
@@ -317,6 +434,10 @@ function App() {
         onSearch={handleSearch}
         onAddProduct={() => setShowAddForm(true)}
         isAdmin={isAdmin && isAdminPage} // แสดงปุ่มเฉพาะใน /admin
+        user={user}
+        onLoginClick={() => setShowAuthModal(true)}
+        onLogout={handleLogout}
+        onCartClick={() => setShowCart(true)}
       />
       
       {/* 🔐 Admin Control Panel - แสดงเฉพาะใน /admin */}
@@ -410,140 +531,282 @@ function App() {
       )}
       
       <main style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-        <BannerHotword />
-        <CategorySection />
+        {/* Show Banner and Category only when NOT on product detail page */}
+        {!isProductDetailPage && (
+          <>
+            <BannerHotword />
+            <CategorySection />
+          </>
+        )}
         
-        <section style={{ padding: '20px 0' }}>
-          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+        <section style={{ padding: isProductDetailPage ? '20px 0' : '20px 0' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 15px' }}>
             
-            {/* URL Info Panel */}
-            <div style={{
-              backgroundColor: 'white',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              marginBottom: '20px',
-              textAlign: 'center',
-              border: `2px solid ${isAdminPage ? '#28a745' : isProductDetailPage ? '#ff6b6b' : '#17a2b8'}`
-            }}>
-              <p style={{ margin: 0, fontSize: '14px' }}>
-                📍 <strong>Current URL:</strong> {currentPath} 
-                {isAdminPage ? (
-                  <span style={{ color: '#28a745', fontWeight: 'bold' }}> - Admin Page ✅</span>
-                ) : isProductDetailPage ? (
-                  <span style={{ color: '#ff6b6b', fontWeight: 'bold' }}> - Product Detail Page 🛍️</span>
-                ) : (
-                  <span style={{ color: '#666' }}> - Guest Page (เข้า <a href="/admin" onClick={(e) => {
-                    e.preventDefault();
-                    window.history.pushState({}, '', '/admin');
-                    setCurrentPath('/admin');
-                  }} style={{ color: '#007bff' }}>/admin</a> เพื่อจัดการสินค้า)</span>
-                )}
-              </p>
-            </div>
+            {/* URL Info Panel - Hide on product detail page */}
+            {!isProductDetailPage && (
+              <div style={{
+                backgroundColor: 'white',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                textAlign: 'center',
+                border: `2px solid ${isAdminPage ? '#28a745' : '#17a2b8'}`
+              }}>
+                <p style={{ margin: 0, fontSize: '14px' }}>
+                  📍 <strong>Current URL:</strong> {currentPath} 
+                  {isAdminPage ? (
+                    <span style={{ color: '#28a745', fontWeight: 'bold' }}> - Admin Page ✅</span>
+                  ) : (
+                    <span style={{ color: '#666' }}> - Guest Page (เข้า <a href="/admin" onClick={(e) => {
+                      e.preventDefault();
+                      window.history.pushState({}, '', '/admin');
+                      setCurrentPath('/admin');
+                    }} style={{ color: '#007bff' }}>/admin</a> เพื่อจัดการสินค้า)</span>
+                  )}
+                </p>
+              </div>
+            )}
 
             {/* 🛍️ Product Detail Page */}
             {isProductDetailPage && currentProduct ? (
               <div style={{
                 backgroundColor: 'white',
                 borderRadius: '8px',
-                padding: '30px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                marginBottom: '20px'
+                padding: '25px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                marginBottom: '20px',
+                border: '1px solid #e0e0e0'
               }}>
-                <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
-                  <div style={{ flex: '1', minWidth: '300px' }}>
-                    <img 
-                      src={currentProduct.imageUrl}
-                      alt={currentProduct.name}
-                      style={{
-                        width: '100%',
-                        maxWidth: '400px',
-                        height: '300px',
-                        objectFit: 'cover',
-                        borderRadius: '8px'
-                      }}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=No+Image';
-                      }}
-                    />
+                <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1', minWidth: '350px' }}>
+                    <div style={{
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      backgroundColor: 'white'
+                    }}>
+                      <img 
+                        src={currentProduct.imageUrl}
+                        alt={currentProduct.name}
+                        style={{
+                          width: '100%',
+                          height: '400px',
+                          objectFit: 'cover'
+                        }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x400?text=No+Image';
+                        }}
+                      />
+                    </div>
                   </div>
                   
-                  <div style={{ flex: '1', minWidth: '300px' }}>
-                    <h1 style={{ 
-                      margin: '0 0 15px 0', 
-                      color: '#333',
-                      fontSize: '28px',
-                      fontWeight: 'bold'
-                    }}>
-                      {currentProduct.name}
-                    </h1>
-                    
-                    <p style={{ 
-                      color: '#666', 
-                      fontSize: '16px',
-                      lineHeight: '1.6',
-                      marginBottom: '20px'
-                    }}>
-                      {currentProduct.description}
-                    </p>
-                    
+                  <div style={{ flex: '1', minWidth: '350px' }}>
                     <div style={{ marginBottom: '20px' }}>
-                      <span style={{
-                        fontSize: '36px',
-                        fontWeight: 'bold',
-                        color: '#ee4d2d'
+                      <h1 style={{ 
+                        margin: '0 0 15px 0', 
+                        color: '#333',
+                        fontSize: '24px',
+                        fontWeight: '400',
+                        lineHeight: '1.3'
                       }}>
-                        ${currentProduct.price}
-                      </span>
+                        {currentProduct.name}
+                      </h1>
+                      
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '10px',
+                        marginBottom: '15px'
+                      }}>
+                        <div style={{ display: 'flex', gap: '2px' }}>
+                          {[...Array(5)].map((_, i) => (
+                            <span key={i} style={{ color: '#ffa500', fontSize: '14px' }}>★</span>
+                          ))}
+                        </div>
+                        <span style={{ color: '#666', fontSize: '14px' }}>4.9</span>
+                        <span style={{ color: '#ccc' }}>|</span>
+                        <span style={{ color: '#666', fontSize: '14px' }}>12 ขายแล้ว</span>
+                      </div>
                     </div>
                     
-                    <div style={{ marginBottom: '20px' }}>
-                      <span style={{
-                        fontSize: '16px',
-                        color: currentProduct.stock > 0 ? '#27ae60' : '#e74c3c',
-                        fontWeight: 'bold'
+                    <div style={{ 
+                      backgroundColor: '#fafafa',
+                      padding: '20px',
+                      borderRadius: '8px',
+                      marginBottom: '20px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '10px' }}>
+                        <span style={{
+                          fontSize: '30px',
+                          fontWeight: 'bold',
+                          color: '#ee4d2d'
+                        }}>
+                          ฿{(currentProduct.price * 35).toLocaleString()}
+                        </span>
+                        <span style={{
+                          fontSize: '16px',
+                          color: '#999',
+                          textDecoration: 'line-through'
+                        }}>
+                          ฿{(currentProduct.price * 35 * 1.2).toLocaleString()}
+                        </span>
+                        <span style={{
+                          backgroundColor: '#ee4d2d',
+                          color: 'white',
+                          padding: '2px 6px',
+                          borderRadius: '2px',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>
+                          -17%
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ marginBottom: '25px' }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '10px',
+                        marginBottom: '15px'
                       }}>
-                        {currentProduct.stock > 0 ? `✅ มีสินค้า ${currentProduct.stock} ชิ้น` : '❌ สินค้าหมด'}
-                      </span>
+                        <span style={{ color: '#666', fontSize: '14px', minWidth: '80px' }}>จำนวน</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <button 
+                            onClick={() => setProductQuantity(prev => Math.max(1, prev - 1))}
+                            disabled={productQuantity <= 1}
+                            style={{
+                              border: '1px solid #e0e0e0',
+                              backgroundColor: productQuantity <= 1 ? '#f5f5f5' : 'white',
+                              color: productQuantity <= 1 ? '#ccc' : '#333',
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '2px',
+                              cursor: productQuantity <= 1 ? 'not-allowed' : 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>-</button>
+                          <span style={{
+                            border: '1px solid #e0e0e0',
+                            padding: '8px 16px',
+                            borderRadius: '2px',
+                            minWidth: '50px',
+                            textAlign: 'center'
+                          }}>{productQuantity}</span>
+                          <button 
+                            onClick={() => setProductQuantity(prev => Math.min(currentProduct?.stock || 0, prev + 1))}
+                            disabled={!currentProduct || productQuantity >= currentProduct.stock}
+                            style={{
+                              border: '1px solid #e0e0e0',
+                              backgroundColor: (!currentProduct || productQuantity >= currentProduct.stock) ? '#f5f5f5' : 'white',
+                              color: (!currentProduct || productQuantity >= currentProduct.stock) ? '#ccc' : '#333',
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '2px',
+                              cursor: (!currentProduct || productQuantity >= currentProduct.stock) ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>+</button>
+                          <span style={{
+                            color: '#666',
+                            fontSize: '14px',
+                            marginLeft: '10px'
+                          }}>
+                            {currentProduct.stock > 0 ? `${currentProduct.stock} ชิ้นที่มีอยู่` : 'สินค้าหมด'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     
                     <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
                       <button 
-                        onClick={handleAddToCart}
-                        disabled={currentProduct.stock === 0}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleAddToCart(currentProduct.id, productQuantity);
+                        }}
+                        disabled={currentProduct.stock === 0 || productQuantity > currentProduct.stock}
+                        style={{
+                          backgroundColor: currentProduct.stock > 0 ? '#ffeee8' : '#f5f5f5',
+                          color: currentProduct.stock > 0 ? '#ee4d2d' : '#ccc',
+                          border: currentProduct.stock > 0 ? '1px solid #ee4d2d' : '1px solid #e0e0e0',
+                          padding: '15px 25px',
+                          borderRadius: '2px',
+                          cursor: currentProduct.stock > 0 ? 'pointer' : 'not-allowed',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          flex: '1',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        🛒 เพิ่มลงตะกร้า
+                      </button>
+                      
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleAddToCart(currentProduct.id, productQuantity);
+                          alert('🛒 นำไปชำระเงิน');
+                        }}
+                        disabled={currentProduct.stock === 0 || productQuantity > currentProduct.stock}
                         style={{
                           backgroundColor: currentProduct.stock > 0 ? '#ee4d2d' : '#ccc',
                           color: 'white',
                           border: 'none',
-                          padding: '12px 24px',
-                          borderRadius: '6px',
+                          padding: '15px 25px',
+                          borderRadius: '2px',
                           cursor: currentProduct.stock > 0 ? 'pointer' : 'not-allowed',
-                          fontSize: '16px',
-                          fontWeight: 'bold'
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          flex: '1',
+                          transition: 'all 0.2s'
                         }}
                       >
-                        {currentProduct.stock > 0 ? '🛒 เพิ่มลงตะกร้า' : '❌ สินค้าหมด'}
-                      </button>
-                      
-                      <button 
-                        onClick={() => {
-                          window.history.pushState({}, '', '/');
-                          setCurrentPath('/');
-                        }}
-                        style={{
-                          backgroundColor: '#6c757d',
-                          color: 'white',
-                          border: 'none',
-                          padding: '12px 24px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '16px'
-                        }}
-                      >
-                        ← กลับหน้าหลัก
+                        ซื้อทันที
                       </button>
                     </div>
+                    
+                    <button 
+                      onClick={() => {
+                        window.history.pushState({}, '', '/');
+                        setCurrentPath('/');
+                      }}
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: '#ee4d2d',
+                        border: '1px solid #ee4d2d',
+                        padding: '8px 16px',
+                        borderRadius: '2px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        width: '100%'
+                      }}
+                    >
+                      ← กลับหน้าหลัก
+                    </button>
                   </div>
+                </div>
+                
+                <div style={{
+                  marginTop: '40px',
+                  borderTop: '1px solid #e0e0e0',
+                  paddingTop: '30px'
+                }}>
+                  <h3 style={{
+                    color: '#333',
+                    fontSize: '18px',
+                    marginBottom: '15px',
+                    fontWeight: '500'
+                  }}>รายละเอียดสินค้า</h3>
+                  <p style={{ 
+                    color: '#666', 
+                    fontSize: '14px',
+                    lineHeight: '1.6',
+                    margin: '0'
+                  }}>
+                    {currentProduct.description}
+                  </p>
                 </div>
               </div>
             ) : isProductDetailPage ? (
@@ -576,33 +839,68 @@ function App() {
               </div>
             ) : (
               <>
-                <h2 style={{ 
-                  marginBottom: '20px', 
-                  color: '#333',
-                  textAlign: 'center',
-                  fontSize: '24px'
+                <div style={{
+                  backgroundColor: 'white',
+                  padding: '20px',
+                  borderRadius: '8px',
+                  marginBottom: '20px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  border: '1px solid #e0e0e0'
                 }}>
-                  📦 Our Products ({filteredProducts.length})
-                </h2>
+                  <h2 style={{ 
+                    margin: '0 0 10px 0', 
+                    color: '#ee4d2d',
+                    textAlign: 'left',
+                    fontSize: '18px',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <span style={{
+                      backgroundColor: '#ee4d2d',
+                      color: 'white',
+                      padding: '4px 8px',
+                      borderRadius: '2px',
+                      fontSize: '14px'
+                    }}>
+                      FLASH SALE
+                    </span>
+                    สินค้าแนะนำ ({filteredProducts.length} รายการ)
+                  </h2>
+                  <p style={{ 
+                    margin: '0', 
+                    color: '#666',
+                    fontSize: '14px'
+                  }}>
+                    ผลิตภัณฑ์คุณภาพดี ราคาถูกที่สุด
+                  </p>
+                </div>
             
             {filteredProducts.length === 0 ? (
               <div style={{ 
                 textAlign: 'center', 
-                padding: '40px',
+                padding: '60px 20px',
                 backgroundColor: 'white',
                 borderRadius: '8px',
-                margin: '20px 0'
+                margin: '20px 0',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                border: '1px solid #e0e0e0'
               }}>
-                <p style={{ fontSize: '18px', color: '#666' }}>
-                  {products.length === 0 ? 'No products available' : 'No products found for your search'}
+                <div style={{ fontSize: '48px', marginBottom: '15px' }}>📦</div>
+                <h3 style={{ color: '#666', fontSize: '16px', marginBottom: '10px' }}>
+                  {products.length === 0 ? 'ยังไม่มีสินค้า' : 'ไม่พบสินค้าที่ค้นหา'}
+                </h3>
+                <p style={{ fontSize: '14px', color: '#999', margin: '0' }}>
+                  ลองค้นหาด้วยคำอื่น หรือดูหมวดหมู่สินค้าอื่น ๆ
                 </p>
               </div>
             ) : (
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: '20px',
-                marginTop: '20px'
+                gridTemplateColumns: 'repeat(auto-fill, minmax(188px, 1fr))',
+                gap: '10px',
+                marginTop: '0'
               }}>
                 {filteredProducts.map(product => (
                   <a 
@@ -621,11 +919,13 @@ function App() {
                   >
                     <div style={{
                       backgroundColor: 'white',
-                      borderRadius: '8px',
-                      padding: '15px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
-                      cursor: 'pointer'
+                      borderRadius: '2px',
+                      overflow: 'hidden',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      border: '1px solid #f0f0f0',
+                      position: 'relative'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-2px)';
@@ -633,92 +933,140 @@ function App() {
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                      e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
                     }}
                     >
-                    <img 
-                      src={product.imageUrl} 
-                      alt={product.name}
-                      style={{
-                        width: '100%',
-                        height: '180px',
-                        objectFit: 'cover',
-                        borderRadius: '4px',
-                        marginBottom: '12px'
-                      }}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/280x180?text=No+Image';
-                      }}
-                    />
                     
-                    <h3 style={{ 
-                      margin: '0 0 8px 0', 
-                      color: '#333',
-                      fontSize: '16px',
-                      fontWeight: '500'
-                    }}>
-                      {product.name}
-                    </h3>
-                    
-                    <p style={{ 
-                      color: '#666', 
-                      fontSize: '13px',
-                      marginBottom: '12px'
-                    }}>
-                      {product.description}
-                    </p>
-                    
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '10px'
-                    }}>
-                      <span style={{
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        color: '#ee4d2d'
-                      }}>
-                        ${product.price}
-                      </span>
-                      
-                      <span style={{
-                        fontSize: '12px',
-                        color: product.stock > 0 ? '#27ae60' : '#e74c3c',
-                        marginLeft: '8px'
-                      }}>
-                        {product.stock > 0 ? `มีสินค้า ${product.stock} ชิ้น` : 'สินค้าหมด'}
-                      </span>
-                      
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleAddToCart();
-                        }}
-                        disabled={product.stock === 0}
+                    {/* Product Image */}
+                    <div style={{ position: 'relative', overflow: 'hidden' }}>
+                      <img 
+                        src={product.imageUrl} 
+                        alt={product.name}
                         style={{
-                          backgroundColor: product.stock > 0 ? '#ee4d2d' : '#ccc',
-                          color: 'white',
-                          border: 'none',
-                          padding: '6px 12px',
-                          borderRadius: '4px',
-                          cursor: product.stock > 0 ? 'pointer' : 'not-allowed',
-                          fontSize: '12px'
+                          width: '100%',
+                          height: '188px',
+                          objectFit: 'cover',
+                          transition: 'transform 0.3s ease'
                         }}
-                      >
-                        {product.stock > 0 ? '🛒 Add to Cart' : '❌ สินค้าหมด'}
-                      </button>
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/188x188?text=No+Image';
+                        }}
+                      />
+                      
+                      {/* Stock Badge */}
+                      {product.stock === 0 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '0',
+                          left: '0',
+                          right: '0',
+                          bottom: '0',
+                          backgroundColor: 'rgba(0,0,0,0.7)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '14px',
+                          fontWeight: 'bold'
+                        }}>
+                          สินค้าหมด
+                        </div>
+                      )}
+                      
+                      {/* Discount Badge */}
+                      {product.stock > 0 && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '8px',
+                          left: '8px',
+                          backgroundColor: '#ff4757',
+                          color: 'white',
+                          padding: '2px 6px',
+                          borderRadius: '2px',
+                          fontSize: '10px',
+                          fontWeight: 'bold'
+                        }}>
+                          -17%
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Product Info */}
+                    <div style={{ padding: '12px' }}>
+                      <h3 style={{ 
+                        margin: '0 0 8px 0', 
+                        color: '#333',
+                        fontSize: '14px',
+                        fontWeight: '400',
+                        lineHeight: '1.3',
+                        height: '36px',
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical'
+                      }}>
+                        {product.name}
+                      </h3>
+                      
+                      {/* Price Section */}
+                      <div style={{ marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                          <span style={{
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            color: '#ee4d2d'
+                          }}>
+                            ฿{(product.price * 35).toLocaleString()}
+                          </span>
+                          <span style={{
+                            fontSize: '12px',
+                            color: '#999',
+                            textDecoration: 'line-through'
+                          }}>
+                            ฿{(product.price * 35 * 1.2).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Rating and Sales */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '8px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <div style={{ display: 'flex', gap: '1px' }}>
+                            {[...Array(5)].map((_, i) => (
+                              <span key={i} style={{ color: '#ffa500', fontSize: '10px' }}>★</span>
+                            ))}
+                          </div>
+                          <span style={{ color: '#666', fontSize: '11px' }}>4.9</span>
+                        </div>
+                        <span style={{ color: '#666', fontSize: '11px' }}>
+                          ขายแล้ว {Math.floor(Math.random() * 100) + 1}
+                        </span>
+                      </div>
+                      
+                      {/* Stock Info */}
+                      <div style={{
+                        fontSize: '11px',
+                        color: product.stock > 0 ? '#27ae60' : '#e74c3c',
+                        marginBottom: '12px',
+                        textAlign: 'center'
+                      }}>
+                        {product.stock > 0 ? `เหลือ ${product.stock} ชิ้น` : 'สินค้าหมด'}
+                      </div>
                     </div>
 
                     {/* Admin Actions - แสดงเฉพาะใน /admin */}
                     {isAdminPage && isAdmin && (
                       <div style={{
                         display: 'flex',
-                        gap: '8px',
-                        marginTop: '8px',
-                        paddingTop: '8px',
-                        borderTop: '1px solid #f0f0f0'
+                        gap: '4px',
+                        padding: '0 12px 12px 12px',
+                        borderTop: '1px solid #f0f0f0',
+                        paddingTop: '8px'
                       }}>
                         {/* ปุ่มแก้ไข - แสดงเมื่ออยู่ใน Edit Mode หรือสินค้าหมด */}
                         {(isEditMode || product.stock === 0) && (
@@ -733,13 +1081,14 @@ function App() {
                               backgroundColor: product.stock === 0 ? '#f39c12' : '#17a2b8',
                               color: 'white',
                               border: 'none',
-                              padding: '6px 12px',
-                              borderRadius: '4px',
+                              padding: '6px 8px',
+                              borderRadius: '2px',
                               cursor: 'pointer',
-                              fontSize: '11px'
+                              fontSize: '10px',
+                              fontWeight: '500'
                             }}
                           >
-                            {product.stock === 0 ? '📦 เติมสินค้า' : '✏️ แก้ไข'}
+                            {product.stock === 0 ? '📦 เติม' : '✏️ แก้ไข'}
                           </button>
                         )}
 
@@ -757,10 +1106,11 @@ function App() {
                               backgroundColor: isDeleting === product.id ? '#6c757d' : '#dc3545',
                               color: 'white',
                               border: 'none',
-                              padding: '6px 12px',
-                              borderRadius: '4px',
+                              padding: '6px 8px',
+                              borderRadius: '2px',
                               cursor: isDeleting === product.id ? 'not-allowed' : 'pointer',
-                              fontSize: '11px'
+                              fontSize: '10px',
+                              fontWeight: '500'
                             }}
                           >
                             {isDeleting === product.id ? 'ลบ...' : '🗑️ ลบ'}
@@ -769,33 +1119,18 @@ function App() {
                       </div>
                     )}
 
-                    {/* Helper Text */}
-                    {isAdminPage && isAdmin && !isEditMode && product.stock > 0 && (
+                    {/* Helper Text for Admin */}
+                    {isAdminPage && isAdmin && !isEditMode && (
                       <div style={{
-                        marginTop: '8px',
-                        paddingTop: '8px',
-                        borderTop: '1px solid #f0f0f0',
+                        padding: '8px 12px',
+                        backgroundColor: '#f8f9fa',
                         textAlign: 'center',
-                        fontSize: '11px',
-                        color: '#999',
-                        fontStyle: 'italic'
+                        fontSize: '10px',
+                        color: product.stock === 0 ? '#e74c3c' : '#999',
+                        fontStyle: 'italic',
+                        borderTop: '1px solid #f0f0f0'
                       }}>
-                        💡 เปิดโหมดแก้ไขเพื่อจัดการสินค้า
-                      </div>
-                    )}
-
-                    {/* Helper Text สำหรับสินค้าหมด */}
-                    {isAdminPage && isAdmin && !isEditMode && product.stock === 0 && (
-                      <div style={{
-                        marginTop: '8px',
-                        paddingTop: '8px',
-                        borderTop: '1px solid #f0f0f0',
-                        textAlign: 'center',
-                        fontSize: '11px',
-                        color: '#e74c3c',
-                        fontStyle: 'italic'
-                      }}>
-                        📦 สินค้าหมด - คลิกปุ่มเติมสินค้าเพื่ออัปเดต Stock
+                        {product.stock === 0 ? '📦 คลิกเพื่อเติมสินค้า' : '💡 เปิดโหมดแก้ไขเพื่อจัดการ'}
                       </div>
                     )}
                     </div>
@@ -835,6 +1170,20 @@ function App() {
           isLoading={isSubmitting}
         />
       )}
+
+      {/* Cart Component */}
+      <Cart
+        isOpen={showCart}
+        onClose={() => setShowCart(false)}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+      />
 
       <style>{`
         @keyframes spin {
