@@ -1,0 +1,87 @@
+# OAuth2 Configuration Template
+# Replace the placeholder values with your actual credentials
+
+# ================================
+# GOOGLE OAUTH2 SETUP (DETAILED)
+# ================================
+# Step 1: Go to https://console.cloud.google.com/
+# Step 2: Create a new project or select existing one
+# Step 3: Enable APIs:
+#   - Go to "APIs & Services" → "Library"
+#   - Search for "Google+ API" and click "Enable"
+# Step 4: Create credentials:
+#   - Go to "APIs & Services" → "Credentials"
+#   - Click "Create Credentials" → "OAuth 2.0 Client IDs"
+#   - Choose "Web application"
+#   - Name: "E-commerce Store"
+# Step 5: Configure URIs (IMPORTANT - NO TRAILING SLASH!):
+#   - Authorized JavaScript origins: http://localhost:8082
+#   - Authorized redirect URIs: http://localhost:8082/login/oauth2/code/google
+# Step 6: Copy Client ID and Client Secret
+
+spring.security.oauth2.client.registration.google.client-id=YOUR_GOOGLE_CLIENT_ID
+spring.security.oauth2.client.registration.google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
+
+# ================================
+# FACEBOOK OAUTH2 SETUP (DETAILED)
+# ================================
+# Step 1: Go to https://developers.facebook.com/
+# Step 2: Click "Create App"
+# Step 3: Choose "Consumer" and click "Next"
+# Step 4: App Name: "E-commerce Store"
+# Step 5: Add Facebook Login:
+#   - Click "Add Product" → "Facebook Login" → "Set Up"
+# Step 6: Configure settings (IMPORTANT - NO TRAILING SLASH!):
+#   - Valid OAuth Redirect URIs: http://localhost:8082/login/oauth2/code/facebook
+#   - App Domains: localhost
+#   - Site URL: http://localhost:8082
+# Step 7: Go to "Settings" → "Basic" to get App ID and App Secret
+
+spring.security.oauth2.client.registration.facebook.client-id=YOUR_FACEBOOK_APP_ID
+spring.security.oauth2.client.registration.facebook.client-secret=YOUR_FACEBOOK_APP_SECRET
+
+# ================================
+# EMAIL CONFIGURATION (Optional)
+# ================================
+# For password reset emails
+spring.mail.username=your-email@gmail.com
+spring.mail.password=your-app-password
+
+# ================================
+# TROUBLESHOOTING COMMON ERRORS
+# ================================
+# Error: "Invalid origin: URIs must not contain a path or end with '/'"
+# Solution: Make sure your URIs don't have trailing slash:
+#   ✅ Correct: http://localhost:8082
+#   ❌ Wrong: http://localhost:8082/
+
+# Error: "redirect_uri_mismatch"  
+# Solution: Make sure redirect URIs match exactly:
+#   ✅ Google: http://localhost:8082/login/oauth2/code/google
+#   ✅ Facebook: http://localhost:8082/login/oauth2/code/facebook
+
+# Error: "App Not Setup: This app is still in development mode"
+# Solution: For Facebook, make sure app is in "Live" mode for production
+
+# ================================
+# HOW TO APPLY THESE SETTINGS
+# ================================
+# 1. Copy your actual Client IDs and Secrets from above
+# 2. Open backend/src/main/resources/application.properties
+# 3. Replace the placeholder values:
+#    - Find lines starting with "spring.security.oauth2.client.registration"
+#    - Replace YOUR_GOOGLE_CLIENT_ID with actual Google Client ID
+#    - Replace YOUR_GOOGLE_CLIENT_SECRET with actual Google Client Secret
+#    - Replace YOUR_FACEBOOK_APP_ID with actual Facebook App ID
+#    - Replace YOUR_FACEBOOK_APP_SECRET with actual Facebook App Secret
+# 4. Restart your Spring Boot application
+# 5. Test OAuth2 login at http://localhost:5174
+
+# ================================
+# TESTING YOUR SETUP
+# ================================
+# 1. Start backend: mvn spring-boot:run (in backend folder)
+# 2. Start frontend: npm run dev (in frontend folder)
+# 3. Open http://localhost:5174
+# 4. Click login button
+# 5. Try Google/Facebook login buttons

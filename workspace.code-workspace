@@ -1,0 +1,36 @@
+{
+    "folders": [
+        {
+            "name": "🔧 Backend (Spring Boot)",
+            "path": "./backend"
+        },
+        {
+            "name": "🎨 Frontend (React/Vue/Angular)",
+            "path": "./frontend"
+        }
+    ],
+    "settings": {
+        "java.configuration.updateBuildConfiguration": "automatic",
+        "spring-boot.ls.problem.application-properties.enabled": true,
+        "java.compile.nullAnalysis.mode": "automatic",
+        "files.exclude": {
+            "**/target": true,
+            "**/node_modules": true,
+            "**/.git": true,
+            "**/.DS_Store": true
+        }
+    },
+    "extensions": {
+        "recommendations": [
+            "vscjava.vscode-java-pack",
+            "vmware.vscode-spring-boot",
+            "vscjava.vscode-spring-initializr",
+            "esbenp.prettier-vscode",
+            "ms-vscode.vscode-typescript-next",
+            "bradlc.vscode-tailwindcss",
+            "formulahendry.auto-rename-tag",
+            "ms-vscode.vscode-json",
+            "ms-vscode.vscode-eslint"
+        ]
+    }
+}

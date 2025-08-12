@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Session Timeout</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+        .success { color: green; }
+        .error { color: red; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .online { background: #d4edda; color: #155724; }
+        .offline { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Session Timeout Test</h1>
+    
+    <div id="status" class="status offline">
+        <strong>Status:</strong> <span id="status-text">Not Authenticated</span>
+    </div>
+    
+    <div class="section">
+        <h2>1. Authentication</h2>
+        <button onclick="loginWithGoogle()">🔐 Login with Google</button>
+        <button onclick="checkAuth()">✅ Check Auth Status</button>
+        <pre id="auth-result"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>2. Cart Operations (Requires Login)</h2>
+        <button onclick="getCart()">🛒 Get Cart</button>
+        <button onclick="addToCart(1, 1)">➕ Add Product 1</button>
+        <pre id="cart-result"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>3. Session Monitoring</h2>
+        <p>Session will be checked every 10 seconds. If expired, you'll be automatically logged out.</p>
+        <button onclick="startMonitoring()">▶️ Start Monitoring</button>
+        <button onclick="stopMonitoring()">⏹️ Stop Monitoring</button>
+        <button onclick="simulateExpiry()">⚠️ Simulate Session Expiry</button>
+        <pre id="monitor-result"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8082/api';
+        let sessionInterval = null;
+        let isAuthenticated = false;
+        
+        function updateStatus(authenticated) {
+            isAuthenticated = authenticated;
+            const statusDiv = document.getElementById('status');
+            const statusText = document.getElementById('status-text');
+            
+            if (authenticated) {
+                statusDiv.className = 'status online';
+                statusText.textContent = 'Authenticated ✅';
+            } else {
+                statusDiv.className = 'status offline';
+                statusText.textContent = 'Not Authenticated ❌';
+                // Stop monitoring if logged out
+                if (sessionInterval) {
+                    clearInterval(sessionInterval);
+                    sessionInterval = null;
+                    displayResult('monitor-result', { message: 'Monitoring stopped due to logout' });
+                }
+            }
+        }
+        
+        function displayResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(data, null, 2);
+            element.className = isError ? 'error' : 'success';
+        }
+        
+        async function checkAuth() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/me`, {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                updateStatus(response.ok && data.success);
+                displayResult('auth-result', data, !response.ok);
+                return response.ok && data.success;
+            } catch (error) {
+                updateStatus(false);
+                displayResult('auth-result', { error: error.message }, true);
+                return false;
+            }
+        }
+        
+        async function getCart() {
+            try {
+                const response = await fetch(`${API_BASE}/session-cart`, {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                
+                if (response.status === 401) {
+                    updateStatus(false);
+                    displayResult('cart-result', { message: '⚠️ Session expired! Please login again.' }, true);
+                } else {
+                    displayResult('cart-result', data, !response.ok);
+                }
+            } catch (error) {
+                displayResult('cart-result', { error: error.message }, true);
+            }
+        }
+        
+        async function addToCart(productId, quantity) {
+            try {
+                const response = await fetch(`${API_BASE}/session-cart/add`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId, quantity })
+                });
+                const data = await response.json();
+                
+                if (response.status === 401) {
+                    updateStatus(false);
+                    displayResult('cart-result', { message: '⚠️ Session expired! Please login again.' }, true);
+                } else {
+                    displayResult('cart-result', data, !response.ok);
+                }
+            } catch (error) {
+                displayResult('cart-result', { error: error.message }, true);
+            }
+        }
+        
+        function startMonitoring() {
+            if (sessionInterval) {
+                clearInterval(sessionInterval);
+            }
+            
+            displayResult('monitor-result', { message: '🔄 Session monitoring started (every 10 seconds)' });
+            
+            sessionInterval = setInterval(async () => {
+                const timestamp = new Date().toLocaleTimeString();
+                console.log(`[${timestamp}] Checking session...`);
+                
+                const isAuth = await checkAuth();
+                
+                if (!isAuth && isAuthenticated) {
+                    // Session expired
+                    updateStatus(false);
+                    displayResult('monitor-result', { 
+                        message: `⚠️ [${timestamp}] Session expired detected! Auto logout performed.`,
+                        timestamp 
+                    }, true);
+                    alert('⚠️ เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+                    stopMonitoring();
+                } else {
+                    displayResult('monitor-result', { 
+                        message: `✅ [${timestamp}] Session OK`,
+                        authenticated: isAuth,
+                        timestamp 
+                    });
+                }
+            }, 10000); // Check every 10 seconds
+        }
+        
+        function stopMonitoring() {
+            if (sessionInterval) {
+                clearInterval(sessionInterval);
+                sessionInterval = null;
+                displayResult('monitor-result', { message: '⏹️ Session monitoring stopped' });
+            }
+        }
+        
+        async function simulateExpiry() {
+            // Clear all cookies to simulate session expiry
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            updateStatus(false);
+            displayResult('monitor-result', { message: '⚠️ Session expiry simulated (cookies cleared)' }, true);
+            
+            // Test immediately
+            setTimeout(checkAuth, 1000);
+        }
+        
+        function loginWithGoogle() {
+            window.location.href = `${API_BASE.replace('/api', '')}/oauth2/authorization/google`;
+        }
+        
+        // Initial status check
+        checkAuth();
+    </script>
+</body>
+</html>

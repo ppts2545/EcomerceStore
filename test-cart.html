@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Cart System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🛒 Cart System Test</h1>
+    
+    <div class="section">
+        <h2>1. Test Authentication Status</h2>
+        <button onclick="checkAuth()">Check Authentication</button>
+        <pre id="auth-result"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>2. Test Get Cart</h2>
+        <button onclick="getCart()">Get Cart Items</button>
+        <pre id="cart-result"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>3. Test Add to Cart</h2>
+        <input type="number" id="productId" placeholder="Product ID" value="1">
+        <input type="number" id="quantity" placeholder="Quantity" value="1">
+        <button onclick="addToCart()">Add to Cart</button>
+        <pre id="add-result"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>4. Login with Google</h2>
+        <button onclick="loginWithGoogle()">Login with Google OAuth2</button>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8082/api/session-cart';
+        
+        function displayResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(data, null, 2);
+            element.className = isError ? 'error' : 'success';
+        }
+        
+        async function checkAuth() {
+            try {
+                const response = await fetch('http://localhost:8082/api/auth/me', {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                displayResult('auth-result', data, !response.ok);
+            } catch (error) {
+                displayResult('auth-result', { error: error.message }, true);
+            }
+        }
+        
+        async function getCart() {
+            try {
+                const response = await fetch(`${API_BASE}`, {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                displayResult('cart-result', data, !response.ok);
+            } catch (error) {
+                displayResult('cart-result', { error: error.message }, true);
+            }
+        }
+        
+        async function addToCart() {
+            const productId = parseInt(document.getElementById('productId').value);
+            const quantity = parseInt(document.getElementById('quantity').value);
+            
+            try {
+                const response = await fetch(`${API_BASE}/add`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId, quantity })
+                });
+                const data = await response.json();
+                displayResult('add-result', data, !response.ok);
+                
+                // Auto refresh cart after adding
+                if (response.ok) {
+                    setTimeout(getCart, 500);
+                }
+            } catch (error) {
+                displayResult('add-result', { error: error.message }, true);
+            }
+        }
+        
+        function loginWithGoogle() {
+            window.location.href = 'http://localhost:8082/oauth2/authorization/google';
+        }
+    </script>
+</body>
+</html>
