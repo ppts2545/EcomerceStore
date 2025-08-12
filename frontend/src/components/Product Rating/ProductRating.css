@@ -1,0 +1,270 @@
+/* Product Rating Component - Modern E-commerce Styling */
+
+.product-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Size Variants */
+.product-rating-small {
+  font-size: 0.6rem;
+  gap: 3px;
+}
+
+.product-rating-medium {
+  font-size: 0.7rem;
+  gap: 4px;
+}
+
+.product-rating-large {
+  font-size: 0.8rem;
+  gap: 6px;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Star Rating */
+.star-rating {
+  display: flex;
+  align-items: center;
+  gap: 0px;
+}
+
+.star {
+  display: inline-block;
+  line-height: 1;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.star-small {
+  font-size: 5px;
+}
+
+.star-medium {
+  font-size: 7px;
+}
+
+.star-large {
+  font-size: 9px;
+}
+
+.star-filled {
+  color: #fbbf24;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.star-half {
+  background: linear-gradient(90deg, #fbbf24 50%, #d1d5db 50%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+.star-empty {
+  color: #d1d5db;
+}
+
+/* Loading State */
+.loading .star-skeleton {
+  color: #e5e7eb;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.skeleton-text {
+  background: #e5e7eb;
+  color: transparent;
+  border-radius: 4px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* Rating Count */
+.rating-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.rating-number {
+  color: #111827;
+  font-weight: 600;
+  font-size: 0.75em;
+}
+
+.review-count {
+  color: #6b7280;
+  font-size: 0.65em;
+}
+
+.no-reviews {
+  color: #9ca3af;
+  font-size: 0.85em;
+  font-style: italic;
+}
+
+/* Rating Text */
+.rating-text {
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 0.85em;
+  margin-left: 4px;
+}
+
+/* Large Size - Rating Summary */
+.product-rating-large .rating-summary {
+  margin-top: 12px;
+  width: 100%;
+}
+
+.rating-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rating-bar-item {
+  display: grid;
+  grid-template-columns: 25px 1fr 35px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+}
+
+.bar-label {
+  color: #6b7280;
+  font-weight: 500;
+  text-align: right;
+}
+
+.bar-container {
+  height: 6px;
+  background-color: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.bar-count {
+  color: #6b7280;
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+/* No Rating State */
+.no-rating {
+  opacity: 0.6;
+}
+
+.no-rating .star-empty {
+  color: #e5e7eb;
+}
+
+/* Interactive States */
+.product-rating:hover .star-filled {
+  color: #f59e0b;
+  transform: scale(1.05);
+}
+
+.product-rating:hover .rating-number {
+  color: #f59e0b;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .product-rating-large {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .product-rating-large .rating-summary {
+    display: none;
+  }
+  
+  .rating-count {
+    font-size: 0.8rem;
+  }
+  
+  .rating-text {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .star-small {
+    font-size: 10px;
+  }
+  
+  .star-medium {
+    font-size: 12px;
+  }
+  
+  .star-large {
+    font-size: 14px;
+  }
+  
+  .product-rating-small {
+    gap: 4px;
+  }
+  
+  .product-rating-medium {
+    gap: 6px;
+  }
+  
+  .rating-count {
+    font-size: 0.75rem;
+  }
+  
+  .review-count {
+    display: none;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .rating-count {
+    color: #9ca3af;
+  }
+  
+  .rating-number {
+    color: #f3f4f6;
+  }
+  
+  .rating-text {
+    color: #9ca3af;
+  }
+  
+  .bar-container {
+    background-color: #374151;
+  }
+  
+  .bar-label,
+  .bar-count {
+    color: #9ca3af;
+  }
+  
+  .no-reviews {
+    color: #6b7280;
+  }
+  
+  .no-rating .star-empty {
+    color: #4b5563;
+  }
+}

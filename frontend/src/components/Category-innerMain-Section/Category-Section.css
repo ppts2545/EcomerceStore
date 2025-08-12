@@ -1,0 +1,225 @@
+/* 🛍️ Shopee-Inspired Category Section */
+.category-section {
+  padding: 2rem 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+}
+
+/* 📋 Category Header */
+.category-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.category-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: 0.5rem;
+}
+
+.title-icon {
+  font-size: 1.75rem;
+}
+
+.category-subtitle {
+  font-size: var(--text-sm);
+  color: var(--gray-600);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* 🎯 Modern Categories Grid */
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--white);
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--gray-200);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  text-align: center;
+}
+
+.category-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary-color);
+}
+
+.category-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--primary-color), #ff6b35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.category-info {
+  width: 100%;
+}
+
+.category-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: 0.25rem;
+}
+
+.category-subtitle {
+  font-size: var(--text-xs);
+  color: var(--gray-500);
+  font-weight: 400;
+}
+
+/* 🔥 Featured Categories Section */
+.featured-section {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--gray-200);
+}
+
+.featured-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.featured-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.featured-icon {
+  font-size: 1.25rem;
+  color: var(--primary-color);
+}
+
+.view-all-btn {
+  padding: 0.5rem 1rem;
+  background: var(--primary-light);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 6px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+
+.view-all-btn:hover {
+  background: var(--primary-color);
+  color: var(--white);
+}
+
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.featured-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.5rem;
+  background: var(--gray-50);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+
+.featured-item:hover {
+  background: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.featured-item-icon {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+}
+
+.featured-item-name {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--gray-700);
+  text-align: center;
+}
+
+/* 📱 Responsive Design */
+@media (max-width: 768px) {
+  .category-section {
+    padding: 1.5rem 0;
+  }
+  
+  .categories-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .category-card {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .category-icon {
+    font-size: 1.5rem;
+  }
+  
+  .category-name {
+    font-size: var(--text-xs);
+  }
+  
+  .featured-section {
+    padding: 1rem;
+  }
+  
+  .featured-grid {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 0.5rem;
+  }
+  
+  .featured-item {
+    padding: 0.75rem 0.25rem;
+  }
+  
+  .featured-item-icon {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .categories-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .category-card {
+    padding: 0.5rem 0.25rem;
+  }
+  
+  .category-name {
+    font-size: 0.625rem;
+  }
+}
