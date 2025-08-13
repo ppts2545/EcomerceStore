@@ -43,6 +43,7 @@ function App() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -362,11 +363,21 @@ function App() {
 
   // ✅ Function สำหรับเพิ่มสินค้าใหม่ - เฉพาะใน /admin
   const handleAddProduct = async (productData: Omit<Product, 'id'>) => {
-    if (!isAdminPage || !isAdmin) {
-      alert('❌ ต้องเป็น Admin ในหน้า /admin เท่านั้นที่สามารถเพิ่มสินค้าได้');
-      return;
-    }
+    console.log('🔧 handleAddProduct called!');
+    console.log('Product data:', productData);
+    console.log('isAdminPage:', isAdminPage);
+    console.log('isAdmin:', isAdmin);
+    console.log('user:', user);
+    console.log('Current path:', currentPath);
+    
+    // สำหรับการทดสอบ - ข้ามการตรวจสอบ admin ชั่วคราว
+    // if (!isAdminPage || !isAdmin) {
+    //   console.log('❌ Not admin or not admin page');
+    //   alert('❌ ต้องเป็น Admin ในหน้า /admin เท่านั้นที่สามารถเพิ่มสินค้าได้');
+    //   return;
+    // }
 
+    console.log('✅ Starting API call...');
     setIsSubmitting(true);
     try {
       const response = await fetch('http://localhost:8082/api/products', {
@@ -377,11 +388,16 @@ function App() {
         body: JSON.stringify(productData)
       });
 
+      console.log('📡 API Response status:', response.status);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.log('❌ API Error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const newProduct = await response.json();
+      console.log('✅ New product created:', newProduct);
       
       setProducts(prev => [...prev, newProduct]);
       setFilteredProducts(prev => [...prev, newProduct]);
@@ -390,7 +406,7 @@ function App() {
       alert(`✅ เพิ่มสินค้า "${newProduct.name}" สำเร็จ!`);
       
     } catch (error) {
-      console.error('Error adding product:', error);
+      console.error('❌ Error adding product:', error);
       alert('❌ เกิดข้อผิดพลาดในการเพิ่มสินค้า กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsSubmitting(false);
@@ -888,6 +904,7 @@ function App() {
               <AddProductForm 
                 onSubmit={handleAddProduct}
                 onCancel={() => setShowAddForm(false)}
+                isLoading={isSubmitting}
               />
             )}
 

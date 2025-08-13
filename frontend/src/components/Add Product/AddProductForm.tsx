@@ -90,7 +90,15 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    console.log('🔧 Form submitted!');
+    console.log('Form data:', formData);
+    
+    if (!validateForm()) {
+      console.log('❌ Validation failed');
+      return;
+    }
+
+    console.log('✅ Validation passed, calling onSubmit...');
 
     try {
       await onSubmit({
@@ -102,12 +110,14 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
         media: mediaItems.length > 0 ? mediaItems : undefined
       });
       
+      console.log('✅ onSubmit completed successfully');
+      
       // Reset form
       setFormData({ name: '', description: '', price: '', imageUrl: '', stock: '' });
       setMediaItems([]);
       setErrors({});
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('❌ Error submitting form:', error);
     }
   };
 

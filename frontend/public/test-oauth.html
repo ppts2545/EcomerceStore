@@ -18,11 +18,10 @@
             results.innerHTML = 'Starting OAuth2 test...\n';
             
             // Open OAuth2 login in popup
-            const popup = window.open(
-                'http://localhost:8082/oauth2/authorization/google',
-                'oauth2',
-                'width=500,height=600'
-            );
+            document.getElementById('loginBtn').addEventListener('click', function() {
+                // Redirect to Google OAuth
+                window.location.href = 
+                'http://localhost:8082/oauth2/authorization/google';
             
             // Listen for the success message
             window.addEventListener('message', function(event) {
@@ -37,21 +36,8 @@
         }
         
         async function testCurrentUser() {
-            const results = document.getElementById('results');
-            results.innerHTML = 'Testing current user...\n';
-            
             try {
                 const response = await fetch('http://localhost:8082/api/auth/me', {
-                    credentials: 'include'
-                });
-                
-                const data = await response.json();
-                results.innerHTML += `Status: ${response.status}\n`;
-                results.innerHTML += `Response: ${JSON.stringify(data, null, 2)}\n`;
-            } catch (error) {
-                results.innerHTML += `Error: ${error.message}\n`;
-            }
-        }
         
         async function testProducts() {
             const results = document.getElementById('results');

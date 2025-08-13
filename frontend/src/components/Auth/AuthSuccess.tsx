@@ -8,55 +8,46 @@ const AuthSuccess: React.FC = () => {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    const token = urlParams.get('token');
     const email = urlParams.get('email');
-    const name = urlParams.get('name');
+    const userId = urlParams.get('userId');
+    const sessionId = urlParams.get('sessionId');
 
-    console.log('🔍 AuthSuccess received:', { token: !!token, email, name });
+    console.log('🔍 AuthSuccess received:', { email, userId, sessionId });
 
-    if (token && email) {
-      // Store token and user info
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('userEmail', email);
-      if (name) localStorage.setItem('userName', name);
-      
-      // 🔄 Refresh user session from backend
+    if (email && userId) {
+      // 🔄 Load user data from backend using session
       AuthService.getCurrentUser().then((user) => {
-        console.log('✅ OAuth2 user loaded:', user);
+        console.log('✅ OAuth2 user loaded via session:', user);
+        
+        // Store user info in localStorage for quick access
+        localStorage.setItem('userEmail', email);
+        localStorage.setItem('userId', userId);
+        if (user.name) localStorage.setItem('userName', user.name);
+        
+        console.log(`✅ OAuth2 login successful for ${user.name || email}`);
       }).catch((error) => {
-        console.error('❌ Error loading OAuth2 user:', error);
+        console.error('❌ Error loading OAuth2 user from session:', error);
       });
       
       // Notify parent window (if opened in popup)
       if (window.opener) {
         window.opener.postMessage({
           type: 'OAUTH_SUCCESS',
-          token: token,
           email: email,
-          name: name
+          userId: userId,
+          sessionId: sessionId
         }, '*');
         window.close();
       } else {
-        // Redirect to main page smoothly without alert
-        console.log(`✅ OAuth2 login successful for ${name || email}`);
-        
-        // Show a brief success message and redirect
+        // Redirect to main page smoothly
         setTimeout(() => {
-          window.location.href = 'http://localhost:5173/';
+          window.location.href = 'http://localhost:5174/';
         }, 1000); // 1 second delay for user to see success message
       }
-    } else if (email && !token) {
-      // OAuth2 success but no token (debugging)
-      console.log(`🔍 OAuth2 Success but no token for ${email}`);
-      
-      // Redirect without alert for better UX
-      setTimeout(() => {
-        window.location.href = 'http://localhost:5173/';
-      }, 1000);
     } else {
-      // Handle error
+      // Handle error - missing token or email
       alert('❌ เข้าสู่ระบบไม่สำเร็จ - ไม่มีข้อมูล token หรือ email');
-      console.log('❌ Missing token or email:', { token, email, name });
+      console.log('❌ Missing token or email:', { email, userId });
       navigate('/');
     }
   }, [location, navigate]);

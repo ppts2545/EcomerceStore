@@ -148,13 +148,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin, onRegis
     }
   };
 
-  const handleOAuth2Login = (provider: 'google' | 'facebook') => {
+  const handleOAuth2Login = (provider: string) => {
+    onClose(); // Close modal before redirecting
+    // Redirect to OAuth2 authorization endpoint
     if (provider === 'google') {
-      // Google OAuth2 is configured - redirect to real OAuth2
       window.location.href = `http://localhost:8082/oauth2/authorization/${provider}`;
-    } else {
-      // Facebook still in development mode
-      alert(`🔧 การเข้าสู่ระบบด้วย ${provider.toUpperCase()} อยู่ในโหมดพัฒนา\n\nระบบจะใช้การเข้าสู่ระบบแบบปกติแทน (Email/Password)\n\nหากต้องการใช้ OAuth2 จริง กรุณาดูไฟล์ oauth2-setup-guide.txt`);
     }
   };
 

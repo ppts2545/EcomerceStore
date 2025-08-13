@@ -1,0 +1,193 @@
+/* Stripe Test Page Styles */
+.stripe-test-page {
+  padding: 20px;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.stripe-test-page .container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.stripe-test-page h1 {
+  color: #232f3e;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.stripe-test-page > .container > p {
+  text-align: center;
+  color: #666;
+  margin-bottom: 40px;
+}
+
+.test-products {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.test-products h3 {
+  color: #232f3e;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.product-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-left: 4px solid #ff9900;
+}
+
+.product-card:last-child {
+  margin-bottom: 0;
+}
+
+.product-card h4 {
+  color: #232f3e;
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+
+.product-card p {
+  margin: 4px 0;
+  color: #666;
+}
+
+.product-card p:last-child {
+  color: #ff9900;
+  font-weight: 600;
+}
+
+.payment-setup {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 32px;
+}
+
+.create-payment-btn {
+  background: #ff9900;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+
+.create-payment-btn:hover:not(:disabled) {
+  background: #e88b00;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 153, 0, 0.3);
+}
+
+.create-payment-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.note {
+  color: #666;
+  font-style: italic;
+  margin: 0;
+}
+
+.payment-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.payment-section h3 {
+  color: #232f3e;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.configuration-info {
+  background: #e8f4f8;
+  border-left: 4px solid #0570de;
+  border-radius: 0 8px 8px 0;
+  padding: 24px;
+}
+
+.configuration-info h3 {
+  color: #232f3e;
+  margin-bottom: 16px;
+}
+
+.configuration-info p {
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.configuration-info ol {
+  color: #666;
+  padding-left: 20px;
+}
+
+.configuration-info li {
+  margin-bottom: 8px;
+}
+
+.configuration-info code {
+  background: #f1f3f4;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 14px;
+}
+
+.configuration-info pre {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 12px;
+  margin: 8px 0;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  overflow-x: auto;
+}
+
+.configuration-info a {
+  color: #0570de;
+  text-decoration: none;
+}
+
+.configuration-info a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .stripe-test-page {
+    padding: 10px;
+  }
+  
+  .test-products,
+  .payment-setup,
+  .payment-section,
+  .configuration-info {
+    padding: 16px;
+  }
+  
+  .create-payment-btn {
+    width: 100%;
+  }
+}

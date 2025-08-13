@@ -1,0 +1,234 @@
+/* Stripe Checkout Button Styles */
+.stripe-checkout-container {
+  max-width: 500px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e6e6e6;
+}
+
+.checkout-preview h3 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.checkout-features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.feature .icon {
+  font-size: 1.2rem;
+}
+
+.order-preview {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+
+.order-preview h4 {
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.items-list {
+  margin-bottom: 1rem;
+}
+
+.preview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.preview-item:last-child {
+  border-bottom: none;
+}
+
+.more-items {
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.total-preview {
+  padding-top: 1rem;
+  border-top: 2px solid #635bff;
+  text-align: right;
+  font-size: 1.25rem;
+  color: #635bff;
+}
+
+.stripe-checkout-button {
+  width: 100%;
+  background: linear-gradient(135deg, #635bff 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  box-shadow: 0 4px 15px rgba(99, 91, 255, 0.3);
+  margin-bottom: 1rem;
+  min-height: 54px;
+}
+
+.stripe-checkout-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(99, 91, 255, 0.4);
+}
+
+.stripe-checkout-button:active {
+  transform: translateY(0);
+}
+
+.stripe-checkout-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.stripe-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.amount-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+}
+
+.checkout-footer {
+  text-align: center;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.checkout-footer p {
+  margin: 0.5rem 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .stripe-checkout-container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  .checkout-features {
+    grid-template-columns: 1fr;
+  }
+  
+  .stripe-checkout-button {
+    font-size: 1rem;
+    padding: 0.875rem 1.5rem;
+  }
+  
+  .amount-badge {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Animation */
+.stripe-checkout-container {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.checkout-features .feature {
+  animation: slideIn 0.6s ease-out;
+}
+
+.checkout-features .feature:nth-child(1) { animation-delay: 0.1s; }
+.checkout-features .feature:nth-child(2) { animation-delay: 0.2s; }
+.checkout-features .feature:nth-child(3) { animation-delay: 0.3s; }
+.checkout-features .feature:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Hover effects */
+.feature:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+}
+
+.order-preview {
+  transition: all 0.3s ease;
+}
+
+.order-preview:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}

@@ -1,0 +1,375 @@
+.payment-processing-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.transaction-header {
+  margin-bottom: 30px;
+}
+
+.transaction-header h2 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.transaction-info {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.transaction-id,
+.transaction-amount {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0;
+  font-size: 16px;
+}
+
+.transaction-amount strong {
+  color: #e74c3c;
+  font-size: 20px;
+}
+
+.status-indicator {
+  margin: 30px 0;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 25px;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-badge.pending {
+  background-color: #f39c12;
+  animation: pulse 2s infinite;
+}
+
+.status-badge.processing {
+  background-color: #3498db;
+  animation: pulse 2s infinite;
+}
+
+.status-badge.completed {
+  background-color: #27ae60;
+}
+
+.status-badge.failed {
+  background-color: #e74c3c;
+}
+
+.status-badge.cancelled {
+  background-color: #95a5a6;
+}
+
+.processing-steps {
+  margin: 40px 0;
+  text-align: left;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  margin: 20px 0;
+  padding: 15px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.step.completed {
+  background: #e8f5e8;
+  border-left: 4px solid #27ae60;
+}
+
+.step.active {
+  background: #e3f2fd;
+  border-left: 4px solid #3498db;
+  animation: slideIn 0.5s ease;
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #bdc3c7;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.step.completed .step-number {
+  background: #27ae60;
+}
+
+.step.active .step-number {
+  background: #3498db;
+  animation: bounce 1s ease;
+}
+
+.step-content h4 {
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.step-content p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.timeout-info {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 30px 0;
+}
+
+.timeout-info p {
+  margin: 0 0 15px 0;
+  color: #856404;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f39c12, #e67e22);
+  transition: width 1s ease;
+  animation: progressPulse 2s ease-in-out infinite alternate;
+}
+
+.success-message,
+.error-message {
+  margin: 30px 0;
+  padding: 30px;
+  border-radius: 12px;
+}
+
+.success-message {
+  background: linear-gradient(135deg, #d5f4e6, #e8f5e8);
+  border: 2px solid #27ae60;
+}
+
+.error-message {
+  background: linear-gradient(135deg, #fadbd8, #f2d7d5);
+  border: 2px solid #e74c3c;
+}
+
+.success-icon,
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.success-message h3,
+.error-message h3 {
+  margin: 15px 0;
+  color: #333;
+}
+
+.success-message p,
+.error-message p {
+  margin: 15px 0;
+  color: #666;
+}
+
+.transaction-details {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.error-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.btn-retry,
+.btn-cancel {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-retry {
+  background: #3498db;
+  color: white;
+}
+
+.btn-retry:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+}
+
+.btn-cancel {
+  background: #95a5a6;
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: #7f8c8d;
+  transform: translateY(-2px);
+}
+
+.processing-animation {
+  margin: 40px 0;
+}
+
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+/* Animations */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+@keyframes bounce {
+  0%, 20%, 60%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  80% { transform: translateY(-5px); }
+}
+
+@keyframes slideIn {
+  0% { 
+    transform: translateX(-20px); 
+    opacity: 0; 
+  }
+  100% { 
+    transform: translateX(0); 
+    opacity: 1; 
+  }
+}
+
+@keyframes progressPulse {
+  0% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .payment-processing-container {
+    margin: 10px;
+    padding: 20px;
+  }
+  
+  .transaction-info {
+    padding: 15px;
+  }
+  
+  .transaction-id,
+  .transaction-amount {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .step {
+    padding: 10px;
+  }
+  
+  .step-number {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+  
+  .error-actions {
+    flex-direction: column;
+  }
+  
+  .btn-retry,
+  .btn-cancel {
+    width: 100%;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .payment-processing-container {
+    background: #2c3e50;
+    color: white;
+  }
+  
+  .transaction-info {
+    background: #34495e;
+  }
+  
+  .transaction-details {
+    background: #34495e;
+  }
+  
+  .detail-row {
+    border-bottom-color: #555;
+  }
+}

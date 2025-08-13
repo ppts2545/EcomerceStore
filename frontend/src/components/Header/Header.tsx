@@ -163,6 +163,20 @@ const Header: React.FC<HeaderProps> = ({
                             <span className="item-icon">👤</span>
                             โปรไฟล์ของฉัน
                           </button>
+                          <button 
+                            className="dropdown-item"
+                            onClick={() => window.location.href = '/wallet'}
+                          >
+                            <span className="item-icon">💰</span>
+                            กระเป๋าเงิน
+                          </button>
+                          <button 
+                            className="dropdown-item"
+                            onClick={() => window.location.href = '/payment-history'}
+                          >
+                            <span className="item-icon">📊</span>
+                            ประวัติการชำระเงิน
+                          </button>
                           <button className="dropdown-item">
                             <span className="item-icon">📦</span>
                             คำสั่งซื้อของฉัน
@@ -175,6 +189,27 @@ const Header: React.FC<HeaderProps> = ({
                             <span className="item-icon">🎟️</span>
                             คูปองของฉัน
                           </button>
+                          
+                          {/* Admin Section */}
+                          {isAdmin && (
+                            <>
+                              <div className="dropdown-divider"></div>
+                              <button 
+                                className="dropdown-item admin-item"
+                                onClick={() => window.location.href = '/admin-finance'}
+                              >
+                                <span className="item-icon">📈</span>
+                                แดชบอร์ดการเงิน
+                              </button>
+                              <button 
+                                className="dropdown-item admin-item"
+                                onClick={() => window.location.href = '/admin'}
+                              >
+                                <span className="item-icon">⚙️</span>
+                                จัดการระบบ
+                              </button>
+                            </>
+                          )}
                           
                           <div className="dropdown-divider"></div>
                           

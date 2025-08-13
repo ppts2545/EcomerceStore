@@ -1,229 +1,153 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './Checkout.css';
+// New simplified Stripe-only payment page (inline implementation)
+import React, { useEffect, useState } from 'react';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import StripeService, { type StripeProduct } from '../../services/StripeService';
+import CartService from '../../services/CartService';
+import AuthService from '../../services/AuthService';
+import type { CartItem } from '../../services/CartService';
+import '../Payment/StripeCheckout.css';
 
-interface CartItem {
-  id: number;
-  productId: number;
-  productName: string;
-  productImage: string;
-  price: number;
-  quantity: number;
-  subtotal: number;
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
+interface InlineFormProps {
+  clientSecret: string;
+  products: StripeProduct[];
+  onSuccess: (paymentIntentId: string) => void;
 }
 
-const Checkout: React.FC = () => {
-  const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    shippingAddress: '',
-    phoneNumber: ''
-  });
+const InlineStripeForm: React.FC<InlineFormProps> = ({ clientSecret, products, onSuccess }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCartItems();
-  }, []);
-
-  const fetchCartItems = async () => {
-    try {
-      const response = await fetch('http://localhost:8082/api/cart', {
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const items = await response.json();
-        setCartItems(items);
+    if (!stripe || !clientSecret) return;
+    stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
+      if (!paymentIntent) return;
+      if (paymentIntent.status === 'succeeded') {
+        onSuccess(paymentIntent.id);
       }
-    } catch (error) {
-      console.error('Error fetching cart items:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
+  }, [stripe, clientSecret, onSuccess]);
 
-  const totalAmount = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.shippingAddress.trim()) {
-      alert('กรุณากรอกที่อยู่จัดส่ง');
+    if (!stripe || !elements) return;
+    setIsLoading(true);
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { receipt_email: email, return_url: window.location.href },
+      redirect: 'if_required'
+    });
+    setIsLoading(false);
+    if (error) {
+      setMessage(error.message || 'เกิดข้อผิดพลาด');
       return;
     }
-    
-    if (!formData.phoneNumber.trim()) {
-      alert('กรุณากรอกเบอร์โทรศัพท์');
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const response = await fetch('http://localhost:8082/api/orders/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        navigate(`/order-success/${result.orderNumber}`);
-      } else {
-        const errorData = await response.json();
-        alert(errorData.error || 'เกิดข้อผิดพลาดในการสั่งซื้อ');
-      }
-    } catch (error) {
-      console.error('Error during checkout:', error);
-      alert('เกิดข้อผิดพลาดในการสั่งซื้อ');
-    } finally {
-      setSubmitting(false);
+    if (paymentIntent && paymentIntent.status === 'succeeded') {
+      setMessage('ชำระเงินสำเร็จ');
+      onSuccess(paymentIntent.id);
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('th-TH').format(price);
-  };
-
-  if (loading) {
-    return (
-      <div className="checkout-loading">
-        <div className="loading-spinner"></div>
-        <p>กำลังโหลด...</p>
-      </div>
-    );
-  }
-
-  if (cartItems.length === 0) {
-    return (
-      <div className="checkout-empty">
-        <h2>ตะกร้าสินค้าว่าง</h2>
-        <p>กรุณาเพิ่มสินค้าในตะกร้าก่อนทำการสั่งซื้อ</p>
-        <button onClick={() => navigate('/')} className="back-shopping-btn">
-          เลือกซื้อสินค้า
-        </button>
-      </div>
-    );
-  }
+  const total = products.reduce((s, p) => s + p.price * p.quantity, 0);
 
   return (
-    <div className="checkout-container">
-      <div className="checkout-header">
-        <h1>ขั้นตอนการสั่งซื้อ</h1>
-        <div className="breadcrumb">
-          <span>ตะกร้าสินค้า</span>
-          <span className="separator">→</span>
-          <span className="active">ชำระเงิน</span>
-          <span className="separator">→</span>
-          <span>เสร็จสิ้น</span>
-        </div>
-      </div>
-
-      <div className="checkout-content">
-        <div className="checkout-form">
-          <div className="form-section">
-            <h2>ข้อมูลการจัดส่ง</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="shippingAddress">ที่อยู่จัดส่ง *</label>
-                <textarea
-                  id="shippingAddress"
-                  name="shippingAddress"
-                  value={formData.shippingAddress}
-                  onChange={handleInputChange}
-                  placeholder="กรอกที่อยู่สำหรับจัดส่งสินค้า"
-                  rows={4}
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="phoneNumber">เบอร์โทรศัพท์ *</label>
-                <input
-                  type="tel"
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange}
-                  placeholder="08x-xxx-xxxx"
-                  required
-                />
-              </div>
-
-              <div className="payment-method">
-                <h3>วิธีการชำระเงิน</h3>
-                <div className="payment-option selected">
-                  <input type="radio" id="cod" name="payment" value="cod" checked readOnly />
-                  <label htmlFor="cod">
-                    <span className="payment-icon">💰</span>
-                    ชำระเงินปลายทาง (COD)
-                  </label>
-                </div>
-              </div>
-            </form>
+    <form onSubmit={submit} className="stripe-checkout-form" style={{ maxWidth: 480, margin: '0 auto' }}>
+      <h2 style={{ textAlign: 'center', marginBottom: 12 }}>ชำระเงินด้วยบัตร</h2>
+      <div className="order-summary" style={{ boxShadow: 'none', border: '1px solid #eee' }}>
+        {products.map(p => (
+          <div key={p.id} className="product-item" style={{ padding: '4px 0' }}>
+            <span>{p.name} × {p.quantity}</span>
+            <span>฿{(p.price * p.quantity).toFixed(2)}</span>
           </div>
-        </div>
-
-        <div className="order-summary">
-          <div className="summary-card">
-            <h2>สรุปคำสั่งซื้อ</h2>
-            
-            <div className="order-items">
-              {cartItems.map((item) => (
-                <div key={item.id} className="summary-item">
-                  <div className="item-image">
-                    <img src={item.productImage || '/api/placeholder/60/60'} alt={item.productName} />
-                  </div>
-                  <div className="item-details">
-                    <h4>{item.productName}</h4>
-                    <div className="item-price-info">
-                      <span className="quantity">จำนวน: {item.quantity}</span>
-                      <span className="price">฿{formatPrice(item.subtotal)}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="summary-totals">
-              <div className="total-row subtotal">
-                <span>ยอดรวมสินค้า:</span>
-                <span>฿{formatPrice(totalAmount)}</span>
-              </div>
-              <div className="total-row shipping">
-                <span>ค่าจัดส่ง:</span>
-                <span>ฟรี</span>
-              </div>
-              <div className="total-row grand-total">
-                <span>ยอดรวมทั้งหมด:</span>
-                <span>฿{formatPrice(totalAmount)}</span>
-              </div>
-            </div>
-
-            <button 
-              type="submit"
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="confirm-order-btn"
-            >
-              {submitting ? 'กำลังดำเนินการ...' : 'ยืนยันการสั่งซื้อ'}
-            </button>
-          </div>
-        </div>
+        ))}
+        <div className="total-amount" style={{ fontSize: 18 }}>รวม: ฿{total.toFixed(2)}</div>
       </div>
+      <label style={{ display: 'block', marginTop: 12, fontSize: 14 }}>อีเมลสำหรับใบเสร็จ
+        <input value={email} onChange={e => setEmail(e.target.value)} required type="email" placeholder="you@example.com" style={{ width: '100%', marginTop: 4 }} />
+      </label>
+      <div style={{ marginTop: 16 }}>
+        <PaymentElement id="payment-element" options={{ layout: 'tabs' }} />
+      </div>
+      <button disabled={isLoading || !stripe || !elements} className="pay-button" style={{ width: '100%', marginTop: 18 }}>
+        {isLoading ? 'กำลังประมวลผล...' : `ชำระเงิน ฿${total.toFixed(2)}`}
+      </button>
+      {message && <div id="payment-message" className={message.includes('สำเร็จ') ? 'success-message' : 'error-message'}>{message}</div>}
+    </form>
+  );
+};
+
+const Checkout: React.FC = () => {
+  const [clientSecret, setClientSecret] = useState<string>('');
+  const [products, setProducts] = useState<StripeProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+  const [needLogin, setNeedLogin] = useState(false);
+  const [successId, setSuccessId] = useState<string>('');
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const user = await AuthService.getCurrentUser();
+        if (!user) { setNeedLogin(true); return; }
+        const cart: CartItem[] = await CartService.getCartItems();
+        if (!cart.length) { setError('ตะกร้าสินค้าว่าง'); return; }
+        const pr: StripeProduct[] = cart.map(c => ({
+          id: c.id.toString(),
+          name: c.productName,
+            description: c.productName,
+          price: c.price,
+          currency: 'thb',
+          quantity: c.quantity,
+          image: c.productImage
+        }));
+        setProducts(pr);
+  console.debug('[Checkout] Creating PaymentIntent with products:', pr);
+  const intent = await StripeService.createPaymentIntent(pr);
+  console.debug('[Checkout] Received clientSecret:', intent.client_secret?.slice(0,12)+'...');
+  setClientSecret(intent.client_secret);
+      } catch (e: unknown) {
+        if (e instanceof Error) setError(e.message);
+        else setError('โหลดข้อมูลล้มเหลว');
+      } finally { setLoading(false); }
+    };
+    init();
+  }, []);
+
+  const appearance = { theme: 'stripe' as const };
+  const isLive = (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '').startsWith('pk_live_');
+  const Banner = () => (
+    <div style={{
+      background: isLive ? '#0a7d41' : '#b7791f',
+      color: 'white',
+      padding: '6px 14px',
+      borderRadius: 8,
+      fontSize: 12,
+      letterSpacing: .5,
+      margin: '0 auto 12px',
+      width: '100%',
+      maxWidth: 480,
+      boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+    }}>
+      {isLive ? 'LIVE MODE • การชำระเงินจะถูกเรียกเก็บเงินจริง' : 'TEST MODE • ไม่มีการตัดเงินจริง ใช้บัตรทดสอบ Stripe'}
     </div>
   );
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center' }}>กำลังเตรียมหน้าชำระเงิน...</div>;
+  if (needLogin) return <div style={{ padding: 40, textAlign: 'center' }}>กรุณาเข้าสู่ระบบก่อนทำการชำระเงิน</div>;
+  if (error) return <div style={{ padding: 40, textAlign: 'center', color: 'crimson' }}>{error}</div>;
+  if (successId) return <div style={{ padding: 40, textAlign: 'center' }}>ชำระเงินสำเร็จ หมายเลข: {successId}</div>;
+
+  return clientSecret ? (
+    <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
+  <Banner />
+  <InlineStripeForm clientSecret={clientSecret} products={products} onSuccess={(id)=>{ setSuccessId(id); CartService.clearCart(); }} />
+    </Elements>
+  ) : <div style={{ padding: 40, textAlign: 'center' }}>กำลังสร้างการชำระเงิน...</div>;
 };
 
 export default Checkout;

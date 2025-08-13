@@ -7,6 +7,7 @@ import com.example.E_commerceStore.WebApp.util.JwtUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -77,23 +78,23 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             // Generate JWT token
             String token = jwtUtil.generateToken(user.getEmail());
             
-            // 🔑 เก็บ User ใน Session หลังจาก Spring Security จัดการ session fixation แล้ว
-            // เก็บ user ใน session ที่ใหม่หลังจาก session fixation protection
-            request.getSession().setAttribute("user", user);
+            // 🔑 เซ็ต Session หลังจาก OAuth2 login สำเร็จ
+            // ไม่ต้อง invalidate session เพราะ Spring Security จัดการให้แล้ว
+            HttpSession session = request.getSession();
+            
+            // เซ็ต session attributes
+            session.setAttribute("user", user);
+            session.setAttribute("userId", user.getId());
+            session.setMaxInactiveInterval(7 * 24 * 60 * 60); // 7 วัน
+            
             System.out.println("🔐 User stored in session: " + user.getEmail());
-            System.out.println("📊 Session ID: " + request.getSession().getId());
+            System.out.println("📊 Session ID: " + session.getId());
+            System.out.println("⏰ Session timeout: " + session.getMaxInactiveInterval());
             
-            // Also store user ID for alternative lookup
-            request.getSession().setAttribute("userId", user.getId());
-            System.out.println("🆔 User ID stored in session: " + user.getId());
-            
-            // Store user in request attributes as well for immediate access
-            request.setAttribute("authenticatedUser", user);
-            
-            // Redirect to frontend with user info and token
-            String frontendUrl = "http://localhost:5173/auth/success?token=" + token +
-                               "&email=" + email + 
-                               "&name=" + name;
+            // Redirect to frontend success page
+            String frontendUrl = "http://localhost:5173/auth/success?email=" + email + 
+                               "&userId=" + user.getId() +
+                               "&sessionId=" + session.getId();
             
             System.out.println("🚀 Redirecting to: " + frontendUrl);
             getRedirectStrategy().sendRedirect(request, response, frontendUrl);

@@ -1,0 +1,110 @@
+/* Payment Cancel Styles */
+.payment-cancel {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.cancel-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  animation: cancelPulse 1s ease-out;
+}
+
+@keyframes cancelPulse {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.payment-cancel h2 {
+  color: #ffc107;
+  font-size: 28px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.payment-cancel > p {
+  color: #6c757d;
+  font-size: 16px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* Transaction Info */
+.transaction-info,
+.order-info {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 10px 0;
+  border-left: 4px solid #ffc107;
+}
+
+.transaction-info p,
+.order-info p {
+  margin: 0;
+  font-size: 14px;
+  color: #495057;
+}
+
+/* Cancel Message */
+.cancel-message {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.cancel-message h3 {
+  color: #856404;
+  font-size: 16px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.cancel-message ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.cancel-message li {
+  color: #856404;
+  font-size: 14px;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.cancel-message li:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive Design for Cancel */
+@media (max-width: 768px) {
+  .payment-cancel {
+    padding: 30px 20px;
+  }
+  
+  .cancel-icon {
+    font-size: 48px;
+  }
+  
+  .payment-cancel h2 {
+    font-size: 24px;
+  }
+  
+  .cancel-message {
+    text-align: center;
+  }
+  
+  .cancel-message ul {
+    text-align: left;
+    display: inline-block;
+  }
+}
