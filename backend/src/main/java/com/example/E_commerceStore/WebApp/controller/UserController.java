@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:5174")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:5175"}, allowCredentials = "true")
 public class UserController {
     
     @Autowired
@@ -20,12 +20,25 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequest request) {
         try {
-            User user = userService.registerUser(
-                request.getEmail(),
-                request.getPassword(),
-                request.getFirstName(),
-                request.getLastName()
-            );
+            User user;
+            if (request.getUsername() != null || request.getGender() != null || request.getAge() != null) {
+                user = userService.registerUser(
+                    request.getEmail(),
+                    request.getPassword(),
+                    request.getFirstName(),
+                    request.getLastName(),
+                    request.getUsername(),
+                    request.getGender(),
+                    request.getAge()
+                );
+            } else {
+                user = userService.registerUser(
+                    request.getEmail(),
+                    request.getPassword(),
+                    request.getFirstName(),
+                    request.getLastName()
+                );
+            }
             
             // ไม่ส่ง password กลับ
             user.setPassword(null);
@@ -67,20 +80,62 @@ public class UserController {
     
     // อัปเดตข้อมูลผู้ใช้
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
-        Optional<User> userOpt = userService.findById(id);
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            user.setFirstName(updatedUser.getFirstName());
-            user.setLastName(updatedUser.getLastName());
-            user.setPhoneNumber(updatedUser.getPhoneNumber());
-            user.setAddress(updatedUser.getAddress());
-            
-            User savedUser = userService.updateUser(user);
-            savedUser.setPassword(null);
-            return ResponseEntity.ok(savedUser);
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User updatedUser, jakarta.servlet.http.HttpSession session) {
+        // Authorization: only owner or admin can update
+        Object sessionUserObj = session.getAttribute("user");
+        if (!(sessionUserObj instanceof com.example.E_commerceStore.WebApp.model.User sessionUser)) {
+            return ResponseEntity.status(401).body("Unauthorized");
         }
-        return ResponseEntity.notFound().build();
+        if (!sessionUser.getId().equals(id) && !sessionUser.isAdmin()) {
+            return ResponseEntity.status(403).body("Forbidden");
+        }
+
+        Optional<User> userOpt = userService.findById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        User user = userOpt.get();
+        // Update only allowed fields if provided (ignore nulls)
+        if (updatedUser.getFirstName() != null) user.setFirstName(updatedUser.getFirstName());
+        if (updatedUser.getLastName() != null) user.setLastName(updatedUser.getLastName());
+        if (updatedUser.getPhoneNumber() != null) user.setPhoneNumber(updatedUser.getPhoneNumber());
+        if (updatedUser.getAddress() != null) user.setAddress(updatedUser.getAddress());
+        if (updatedUser.getUsername() != null) user.setUsername(updatedUser.getUsername());
+        if (updatedUser.getGender() != null) user.setGender(updatedUser.getGender());
+        if (updatedUser.getAge() != null) user.setAge(updatedUser.getAge());
+
+        User savedUser = userService.updateUser(user);
+        savedUser.setPassword(null);
+        // also refresh session user if same person
+        if (sessionUser.getId().equals(id)) {
+            session.setAttribute("user", savedUser);
+        }
+        return ResponseEntity.ok(savedUser);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id, jakarta.servlet.http.HttpSession session) {
+        // Authorization: only owner or admin can delete
+        Object sessionUserObj = session.getAttribute("user");
+        if (!(sessionUserObj instanceof com.example.E_commerceStore.WebApp.model.User sessionUser)) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+        if (!sessionUser.getId().equals(id) && !sessionUser.isAdmin()) {
+            return ResponseEntity.status(403).body("Forbidden");
+        }
+
+        Optional<User> userOpt = userService.findById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        userService.deleteUser(id);
+        // If the user deleted themselves, invalidate session
+        if (sessionUser.getId().equals(id)) {
+            session.invalidate();
+        }
+        return ResponseEntity.ok().build();
     }
     
     // ดูผู้ใช้ทั้งหมด (เฉพาะ Admin)
@@ -115,6 +170,9 @@ public class UserController {
         private String password;
         private String firstName;
         private String lastName;
+        private String username;
+        private com.example.E_commerceStore.WebApp.model.Gender gender;
+        private Integer age;
         
         // Getters and setters
         public String getEmail() { return email; }
@@ -128,6 +186,15 @@ public class UserController {
         
         public String getLastName() { return lastName; }
         public void setLastName(String lastName) { this.lastName = lastName; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public com.example.E_commerceStore.WebApp.model.Gender getGender() { return gender; }
+    public void setGender(com.example.E_commerceStore.WebApp.model.Gender gender) { this.gender = gender; }
+
+    public Integer getAge() { return age; }
+    public void setAge(Integer age) { this.age = age; }
     }
     
     public static class LoginRequest {

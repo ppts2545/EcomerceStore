@@ -32,6 +32,8 @@ const UserProfile: React.FC = () => {
     sms: false,
     push: true
   });
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const loadUserProfile = useCallback(async () => {
     try {
@@ -86,13 +88,48 @@ const UserProfile: React.FC = () => {
   }, [loadUserProfile, loadUserOrders]);
 
   const handleSaveProfile = async () => {
+    if (!user) return;
+    setSaving(true);
     try {
-      // TODO: Implement API call to update user profile
-      setUser({ ...user, ...formData } as User);
+      const payload: Partial<User> = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        // email: formData.email, // Email change is typically restricted; backend doesn't update it currently
+        phoneNumber: formData.phoneNumber,
+        address: formData.address,
+      } as Partial<User>;
+
+  const resp = await fetch(`http://localhost:8082/api/users/${user.id}` , {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+
+      if (resp.status === 401) {
+        navigate('/login');
+        return;
+      }
+      if (resp.status === 403) {
+        alert('คุณไม่มีสิทธิ์แก้ไขข้อมูลนี้');
+        return;
+      }
+      if (!resp.ok) {
+        const err = await resp.text();
+        throw new Error(err || 'อัปเดตข้อมูลไม่สำเร็จ');
+      }
+
+      const updated: User = await resp.json();
+      setUser(updated);
+      setFormData(updated);
+      // persist to localStorage so AuthService.getUser() stays in sync
+      localStorage.setItem('user', JSON.stringify(updated));
       setIsEditing(false);
-      // Show success message
     } catch (error) {
       console.error('Error updating profile:', error);
+      alert('อัปเดตข้อมูลไม่สำเร็จ กรุณาลองใหม่');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -108,6 +145,41 @@ const UserProfile: React.FC = () => {
       ...prev,
       [type]: !prev[type]
     }));
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    const confirmed = window.confirm('คุณต้องการลบบัญชีนี้ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้');
+    if (!confirmed) return;
+    setDeleting(true);
+    try {
+  const resp = await fetch(`http://localhost:8082/api/users/${user.id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (resp.status === 401) {
+        navigate('/login');
+        return;
+      }
+      if (resp.status === 403) {
+        alert('คุณไม่มีสิทธิ์ลบบัญชีนี้');
+        return;
+      }
+      if (!resp.ok) {
+        const err = await resp.text();
+        throw new Error(err || 'ลบบัญชีไม่สำเร็จ');
+      }
+
+      // Success: logout and redirect
+      await AuthService.logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      alert('ลบบัญชีไม่สำเร็จ กรุณาลองใหม่');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const getStatusBadgeClass = (status: string) => {
@@ -249,7 +321,8 @@ const UserProfile: React.FC = () => {
                     <input
                       type="email"
                       value={formData.email || ''}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      disabled
+                      title="ไม่รองรับการแก้ไขอีเมลในตอนนี้"
                     />
                   </div>
 
@@ -273,14 +346,7 @@ const UserProfile: React.FC = () => {
                     />
                   </div>
 
-                  <div className="form-actions">
-                    <button type="button" onClick={() => setIsEditing(false)}>
-                      ยกเลิก
-                    </button>
-                    <button type="button" className="save-btn" onClick={handleSaveProfile}>
-                      บันทึก
-                    </button>
-                  </div>
+                  {/* Bottom actions are shown globally below; keep form minimal here */}
                 </div>
               ) : (
                 <div className="profile-info">
@@ -310,14 +376,44 @@ const UserProfile: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* Global bottom actions for Profile tab */}
+              <div className="form-actions" style={{ marginTop: 16 }}>
+                {isEditing && (
+                  <button
+                    type="button"
+                    className="save-btn"
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                  >
+                    {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="delete-btn"
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  style={{ marginLeft: 8 }}
+                >
+                  {deleting ? 'กำลังลบ...' : 'ลบบัญชี'}
+                </button>
+              </div>
             </div>
           )}
 
           {/* Orders Tab */}
           {activeTab === 'orders' && (
             <div>
-              <div className="section-header">
+              <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <h2>คำสั่งซื้อของฉัน</h2>
+                <button
+                  className="detail-history-btn"
+                  style={{ marginLeft: 16, padding: '6px 16px', background: '#f5f5f5', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer', fontSize: 14 }}
+                  onClick={() => navigate('/orders/history')}
+                >
+                  ดูประวัติคำสั่งซื้อแบบละเอียด
+                </button>
               </div>
 
               {orders.length === 0 ? (

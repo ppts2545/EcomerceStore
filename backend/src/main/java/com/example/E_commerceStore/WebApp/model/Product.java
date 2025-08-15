@@ -75,7 +75,12 @@ public class Product {
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
     
-    public String getImageUrl() { return imageUrl; }
+    public String getImageUrl() {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return "/placeholder-product.jpg";
+        }
+        return imageUrl;
+    }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     
     public Integer getStock() { return stock; }

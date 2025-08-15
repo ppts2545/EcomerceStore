@@ -247,7 +247,7 @@ function App() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8082/api/products');
+  const response = await fetch('http://localhost:8082/api/products');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -259,7 +259,7 @@ function App() {
       console.log('✅ Products loaded:', data);
     } catch (error) {
       console.error('❌ Error fetching products:', error);
-      setError('Failed to load products. Make sure backend is running on port 8082.');
+  setError('Failed to load products. Make sure backend is running on port 8082.');
     } finally {
       setLoading(false);
     }
@@ -305,7 +305,7 @@ function App() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:8082/api/products', {
+  const response = await fetch('http://localhost:8082/api/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -344,7 +344,7 @@ function App() {
     
     setIsSubmitting(true);
     try {
-      const response = await fetch(`http://localhost:8082/api/products/${editingProduct.id}`, {
+  const response = await fetch(`http://localhost:8082/api/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -385,7 +385,7 @@ function App() {
 
     setIsDeleting(productId);
     try {
-      const response = await fetch(`http://localhost:8082/api/products/${productId}`, {
+  const response = await fetch(`http://localhost:8082/api/products/${productId}`, {
         method: 'DELETE'
       });
 

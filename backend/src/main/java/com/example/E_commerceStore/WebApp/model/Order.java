@@ -40,7 +40,7 @@ public class Order {
     @Column(name = "estimated_delivery")
     private LocalDateTime estimatedDelivery;
     
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<OrderItem> orderItems = new ArrayList<>();
     
     // Constructors

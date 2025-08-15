@@ -1,241 +1,241 @@
-/* 🛍️ Shopee-Inspired Banner Section */
-.banner-hotword-section {
-  padding: 1rem 0;
-  background: var(--gray-50);
+/* Banner-Hotword.css */
+
+/* Layout Wrapper */
+.banner-hotword {
+  background-color: #f5f5f5;
+  padding: 20px 0;
 }
 
-.banner-container {
+.banner-hotword .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1rem;
-}
-
-.banner-grid {
+  padding: 0 20px;
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 1rem;
-  height: 240px;
+  gap: 20px;
 }
 
-/* 🎠 Main Banner Carousel */
-.main-banner {
+/* Carousel Main */
+.banner-carousel {
   position: relative;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  background: var(--white);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  height: 235px;
+  background-color: #fff;
 }
 
-.banner-slide {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+.banner-carousel .slide {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.5s ease-in-out;
 }
 
-.banner-image {
+.banner-carousel .slide.active {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.banner-carousel img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: var(--transition-slow);
+  transition: transform .4s ease;
 }
 
-.banner-overlay {
+.banner-carousel img:hover {
+  transform: scale(1.03);
+}
+
+/* Badge */
+.banner-carousel .badge {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, rgba(0, 0, 0, 0.3), transparent);
-  display: flex;
-  align-items: center;
-  padding: 2rem;
+  top: 20px; left: 20px;
+  background-color: #ee4d2d;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(238, 77, 45, 0.3);
 }
 
-.banner-content {
-  color: var(--white);
-  max-width: 50%;
-}
-
-.banner-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background: var(--primary-color);
-  color: var(--white);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  border-radius: 12px;
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.banner-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.banner-description {
-  font-size: var(--text-sm);
-  opacity: 0.9;
-  margin-bottom: 1rem;
-}
-
-.banner-cta {
-  padding: 0.5rem 1rem;
-  background: var(--white);
-  color: var(--primary-color);
+/* Navigation arrows */
+.banner-carousel .arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(255,255,255,0.85);
+  color: #333;
   border: none;
-  border-radius: 6px;
-  font-size: var(--text-sm);
-  font-weight: 600;
+  border-radius: 50%;
+  width: 38px; height: 38px;
   cursor: pointer;
-  transition: var(--transition-normal);
+  font-size: 18px;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: background-color .25s ease;
 }
 
-.banner-cta:hover {
-  background: var(--primary-color);
-  color: var(--white);
-  transform: translateY(-1px);
+.banner-carousel .arrow:hover {
+  background-color: white;
 }
 
-/* 🎯 Banner Navigation */
-.banner-nav {
+.banner-carousel .arrow.left { left: 15px; }
+.banner-carousel .arrow.right { right: 15px; }
+
+/* Indicators */
+.banner-carousel .indicators {
   position: absolute;
-  bottom: 1rem;
+  bottom: 15px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 0.5rem;
+  gap: 6px;
 }
 
-.nav-dot {
-  width: 8px;
-  height: 8px;
+.banner-carousel .indicators button {
+  width: 8px; height: 8px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
+  border: none;
   cursor: pointer;
-  transition: var(--transition-normal);
+  background-color: rgba(255,255,255,0.6);
+  transition: all .25s ease;
 }
 
-.nav-dot.active {
-  background: var(--white);
-  transform: scale(1.2);
+.banner-carousel .indicators button.active {
+  background-color: #ee4d2d;
+  transform: scale(1.3);
 }
 
-/* 📦 Side Promotions */
-.side-promotions {
+/* Right Side Mini Banners */
+.right-panel {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 10px;
 }
 
-.promo-card {
-  flex: 1;
-  position: relative;
+.right-panel .mini-banner {
   border-radius: 8px;
-  overflow: hidden;
-  background: var(--white);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: var(--transition-normal);
-}
-
-.promo-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.promo-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.promo-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, rgba(0, 0, 0, 0.4), transparent);
+  padding: 16px;
+  color: white;
+  height: 110px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  padding: 1rem;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
 }
 
-.promo-content {
-  color: var(--white);
-  text-align: center;
+.right-panel .mini-banner:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
 }
 
-.promo-title {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+.right-panel .title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 4px;
 }
 
-.promo-subtitle {
-  font-size: var(--text-xs);
+.right-panel .subtitle {
+  font-size: 12px;
   opacity: 0.9;
 }
 
-/* 📱 Responsive Design */
-@media (max-width: 768px) {
-  .banner-grid {
+/* Flash Sale Section */
+.flash-sale {
+  max-width: 1200px;
+  margin: 20px auto 0;
+  padding: 0 20px;
+}
+
+.flash-sale .box {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid #f0f0f0;
+}
+
+.flash-sale .header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.flash-sale .header .left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.flash-sale .tag {
+  background: linear-gradient(135deg, #ee4d2d 0%, #ff6533 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.flash-sale .timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #333;
+  font-size: 14px;
+}
+
+.flash-sale .timer-box {
+  background-color: #333;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  min-width: 32px;
+  text-align: center;
+}
+
+.flash-sale .link {
+  color: #ee4d2d;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.flash-sale .desc {
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .banner-hotword .container {
     grid-template-columns: 1fr;
-    height: auto;
   }
-  
-  .main-banner {
-    height: 200px;
-  }
-  
-  .banner-content {
-    max-width: 70%;
-  }
-  
-  .banner-title {
-    font-size: 1.25rem;
-  }
-  
-  .side-promotions {
-    grid-row: 1;
+  .right-panel {
     flex-direction: row;
-    height: 80px;
-  }
-  
-  .promo-card {
-    min-height: 80px;
   }
 }
 
-@media (max-width: 480px) {
-  .banner-section {
-    padding: 0.5rem 0;
+@media (max-width: 576px) {
+  .banner-carousel {
+    height: 180px;
   }
-  
-  .main-banner {
-    height: 160px;
+  .right-panel .mini-banner {
+    height: 90px;
+    padding: 12px;
   }
-  
-  .banner-overlay {
-    padding: 1rem;
-  }
-  
-  .banner-title {
-    font-size: 1rem;
-  }
-  
-  .banner-description {
-    display: none;
-  }
-  
-  .side-promotions {
-    display: none;
+  .flash-sale .tag {
+    font-size: 14px;
+    padding: 6px 12px;
   }
 }

@@ -59,6 +59,9 @@ public class SecurityConfig {
                 // User endpoints (require authentication)
                 .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
                 .requestMatchers("/api/cart/**").hasAnyRole("USER", "ADMIN")
+                // Allow public access to order history for dev
+                .requestMatchers("/api/orders/my-orders").permitAll()
+                // All other order endpoints require authentication
                 .requestMatchers("/api/orders/**").hasAnyRole("USER", "ADMIN")
                 
                 // All other requests are permitted
@@ -67,7 +70,7 @@ public class SecurityConfig {
             .oauth2Login(oauth2 -> oauth2
                 .loginPage("/oauth2/authorization/google") 
                 .successHandler(oauth2SuccessHandler)
-                .failureUrl("http://localhost:5174/auth/error")
+                .failureUrl("/auth/error")
                 .permitAll()
             )
             .logout(logout -> logout
@@ -117,4 +120,5 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+    //
 }

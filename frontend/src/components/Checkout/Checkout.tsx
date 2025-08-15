@@ -90,7 +90,10 @@ const Checkout: React.FC = () => {
   const [successId, setSuccessId] = useState<string>('');
 
   useEffect(() => {
+    let inProgress = false;
     const init = async () => {
+      if (inProgress) return;
+      inProgress = true;
       try {
         const user = await AuthService.getCurrentUser();
         if (!user) { setNeedLogin(true); return; }
@@ -99,23 +102,31 @@ const Checkout: React.FC = () => {
         const pr: StripeProduct[] = cart.map(c => ({
           id: c.id.toString(),
           name: c.productName,
-            description: c.productName,
+          description: c.productName,
           price: c.price,
           currency: 'thb',
           quantity: c.quantity,
           image: c.productImage
         }));
         setProducts(pr);
-  console.debug('[Checkout] Creating PaymentIntent with products:', pr);
-  const intent = await StripeService.createPaymentIntent(pr);
-  console.debug('[Checkout] Received clientSecret:', intent.client_secret?.slice(0,12)+'...');
-  setClientSecret(intent.client_secret);
+        console.debug('[Checkout] Creating PaymentIntent with products:', pr);
+        const intent = await StripeService.createPaymentIntent(pr);
+        console.debug('[Checkout] Received clientSecret:', intent.client_secret?.slice(0,12)+'...');
+        setClientSecret(intent.client_secret);
       } catch (e: unknown) {
-        if (e instanceof Error) setError(e.message);
-        else setError('โหลดข้อมูลล้มเหลว');
-      } finally { setLoading(false); }
+        let msg = 'โหลดข้อมูลล้มเหลว';
+        if (e instanceof Error) {
+          if (e.message.includes('idempotency_key_in_use')) {
+            msg = 'มีการสร้างคำขอชำระเงินซ้ำ กรุณารอสักครู่แล้วลองใหม่อีกครั้ง';
+          } else {
+            msg = e.message;
+          }
+        }
+        setError(msg);
+      } finally { setLoading(false); inProgress = false; }
     };
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const appearance = { theme: 'stripe' as const };

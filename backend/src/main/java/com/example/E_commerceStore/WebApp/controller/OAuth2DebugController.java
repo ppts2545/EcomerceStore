@@ -1,6 +1,7 @@
 package com.example.E_commerceStore.WebApp.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -10,6 +11,9 @@ import java.util.Map;
 
 @Controller
 public class OAuth2DebugController {
+
+    @Value("${frontend.base-url:http://localhost:5173}")
+    private String frontendBaseUrl;
 
     @GetMapping("/login/oauth2/code/google")
     @ResponseBody
@@ -52,8 +56,10 @@ public class OAuth2DebugController {
             debug.append("<h3 style='color: red;'>❌ Error: ").append(error).append("</h3>");
         }
         
-        debug.append("<hr>");
-        debug.append("<a href='http://localhost:5173'>🏠 กลับไปหน้าหลัก</a>");
+    debug.append("<hr>");
+    String origin = request.getHeader("Origin");
+    String base = origin != null && origin.startsWith("http://localhost:") ? origin : frontendBaseUrl;
+    debug.append("<a href='").append(base).append("'>🏠 กลับไปหน้าหลัก</a>");
         
         return debug.toString();
     }
@@ -61,11 +67,13 @@ public class OAuth2DebugController {
     @GetMapping("/auth/debug")
     @ResponseBody
     public String debugAuth(HttpServletRequest request) {
-        return "<h2>🔍 Auth Debug</h2>" +
-               "<p>Session ID: " + request.getSession().getId() + "</p>" +
-               "<p>Request URL: " + request.getRequestURL() + "</p>" +
-               "<p>Context Path: " + request.getContextPath() + "</p>" +
-               "<a href='/oauth2/authorization/google'>🔗 Test Google OAuth2</a><br>" +
-               "<a href='http://localhost:5173'>🏠 กลับไปหน้าหลัก</a>";
+    String origin = request.getHeader("Origin");
+    String base = origin != null && origin.startsWith("http://localhost:") ? origin : frontendBaseUrl;
+    return "<h2>🔍 Auth Debug</h2>" +
+           "<p>Session ID: " + request.getSession().getId() + "</p>" +
+           "<p>Request URL: " + request.getRequestURL() + "</p>" +
+           "<p>Context Path: " + request.getContextPath() + "</p>" +
+           "<a href='/oauth2/authorization/google'>🔗 Test Google OAuth2</a><br>" +
+           "<a href='" + base + "'>🏠 กลับไปหน้าหลัก</a>";
     }
 }

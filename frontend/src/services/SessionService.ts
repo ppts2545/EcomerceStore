@@ -39,7 +39,7 @@ class SessionService {
    */
   private async checkSession(): Promise<boolean> {
     try {
-      const response = await fetch('http://localhost:8082/api/auth/me', {
+  const response = await fetch('http://localhost:8082/api/auth/me', {
         method: 'GET',
         credentials: 'include',
         headers: {

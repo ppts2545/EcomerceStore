@@ -3,11 +3,14 @@ package com.example.E_commerceStore.WebApp.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.stereotype.Controller;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 public class CustomErrorController implements ErrorController {
+    @Value("${frontend.base-url:http://localhost:5173}")
+    private String frontendBaseUrl;
 
     @RequestMapping("/error")
     @ResponseBody
@@ -54,7 +57,7 @@ public class CustomErrorController implements ErrorController {
         }
         
         errorInfo.append("<hr>");
-        errorInfo.append("<a href='http://localhost:5173' style='padding: 10px; background: #007bff; color: white; text-decoration: none;'>🏠 กลับไปหน้าหลัก</a>");
+    errorInfo.append("<a href='" + frontendBaseUrl + "' style='padding: 10px; background: #007bff; color: white; text-decoration: none;'>🏠 กลับไปหน้าหลัก</a>");
         errorInfo.append("<br><br>");
         errorInfo.append("<a href='/auth/debug' style='padding: 10px; background: #28a745; color: white; text-decoration: none;'>🔍 Debug OAuth2</a>");
         errorInfo.append("</body></html>");

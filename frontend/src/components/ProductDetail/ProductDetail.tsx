@@ -44,7 +44,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch('http://localhost:8082/api/auth/user', {
+  const response = await fetch('http://localhost:8082/api/auth/user', {
           credentials: 'include'
         });
         setIsLoggedIn(response.ok);

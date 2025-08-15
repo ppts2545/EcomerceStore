@@ -38,7 +38,7 @@ const OrderSuccess: React.FC = () => {
     const fetchOrder = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:8082/api/orders/number/${orderNumber}`, {
+  const response = await fetch(`http://localhost:8082/api/orders/number/${orderNumber}`, {
           credentials: 'include'
         });
         
@@ -259,7 +259,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ product, onClose }) => {
 
     setSubmitting(true);
     try {
-      const response = await fetch(`http://localhost:8082/api/comments/product/${product.productId}`, {
+  const response = await fetch(`http://localhost:8082/api/comments/product/${product.productId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

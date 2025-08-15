@@ -17,6 +17,7 @@ import PaymentHistoryPage from './pages/PaymentHistoryPage';
 import PaymentDemo from './components/Demo/PaymentDemo';
 import UserWalletPage from './pages/UserWalletPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import OrderHistoryPage from './pages/OrderHistoryPage';
 
 const Router: React.FC = () => {
   return (
@@ -37,9 +38,10 @@ const Router: React.FC = () => {
       <Route path="/payment-flow" element={<CheckoutPage />} />
       <Route path="/payment-history" element={<PaymentHistoryPage />} />
       <Route path="/wallet" element={<UserWalletPage />} />
-      <Route path="/admin-finance" element={<AdminDashboardPage />} />
-      <Route path="/stripe-test" element={<StripeTestPage />} />
-      <Route path="/payment-demo" element={<PaymentDemo />} />
+  <Route path="/admin-finance" element={<AdminDashboardPage />} />
+  <Route path="/stripe-test" element={<StripeTestPage />} />
+  <Route path="/payment-demo" element={<PaymentDemo />} />
+  <Route path="/orders/history" element={<OrderHistoryPage />} />
     </Routes>
   );
 };

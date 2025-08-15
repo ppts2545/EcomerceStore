@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Header.css';
 
 interface User {
@@ -32,6 +33,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const navigate = useNavigate();
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,7 +179,7 @@ const Header: React.FC<HeaderProps> = ({
                             <span className="item-icon">📊</span>
                             ประวัติการชำระเงิน
                           </button>
-                          <button className="dropdown-item">
+                          <button className="dropdown-item" onClick={() => navigate('/orders/history')}>
                             <span className="item-icon">📦</span>
                             คำสั่งซื้อของฉัน
                           </button>

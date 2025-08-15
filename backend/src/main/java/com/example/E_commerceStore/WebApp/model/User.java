@@ -18,6 +18,9 @@ public class User {
     @Column(nullable = false)
     private String password;
     
+    @Column(unique = true)
+    private String username; // Optional unique username
+
     @Column(nullable = false)
     private String firstName;
     
@@ -33,6 +36,13 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role = UserRole.CUSTOMER;
+
+    // Optional profile fields
+    @Enumerated(EnumType.STRING)
+    private Gender gender; // MALE/FEMALE/OTHER/UNSPECIFIED
+
+    @Column
+    private Integer age; // Optional age
     
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -107,6 +117,9 @@ public class User {
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
     
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
     
@@ -121,6 +134,12 @@ public class User {
     
     public UserRole getRole() { return role; }
     public void setRole(UserRole role) { this.role = role; }
+
+    public Gender getGender() { return gender; }
+    public void setGender(Gender gender) { this.gender = gender; }
+
+    public Integer getAge() { return age; }
+    public void setAge(Integer age) { this.age = age; }
     
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

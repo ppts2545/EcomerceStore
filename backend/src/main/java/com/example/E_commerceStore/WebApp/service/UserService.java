@@ -73,6 +73,36 @@ public class UserService {
         
         return savedUser;
     }
+
+    // Overload that supports more profile fields
+    public User registerUser(String email, String password, String firstName, String lastName,
+                             String username,
+                             com.example.E_commerceStore.WebApp.model.Gender gender,
+                             Integer age) {
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น");
+        }
+        if (username != null && !username.isBlank() && userRepository.existsByUsername(username)) {
+            throw new RuntimeException("ชื่อผู้ใช้งานนี้ถูกใช้งานแล้ว");
+        }
+
+        String hashedPassword = passwordEncoder.encode(password);
+
+        User user = new User(email, hashedPassword, firstName, lastName);
+        user.setUsername(username);
+        user.setGender(gender);
+        user.setAge(age);
+        user.setRole(UserRole.USER);
+        user.setCreatedAt(LocalDateTime.now());
+
+        User savedUser = userRepository.save(user);
+        try {
+            emailService.sendWelcomeEmail(email, firstName);
+        } catch (Exception e) {
+            System.err.println("⚠️ Failed to send welcome email, but user created successfully");
+        }
+        return savedUser;
+    }
     
     // สร้างหรืออัปเดตผู้ใช้จาก OAuth2 (Google, Facebook)
     public User createOrUpdateOAuth2User(String email, String firstName, String lastName, String provider, String providerId) {

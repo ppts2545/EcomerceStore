@@ -35,7 +35,7 @@ class StripeService {
       console.error('Stripe publishable key not found in environment variables');
     }
     this.stripe = loadStripe(publishableKey);
-    this.apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8082/api';
+  this.apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8082/api';
     // Fetch config to log mode (non-blocking)
     fetch(`${this.apiUrl}/payments/config`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)

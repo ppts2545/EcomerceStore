@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Value("${frontend.base-url:http://localhost:5173}")
+    private String frontendBaseUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -91,11 +95,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             System.out.println("📊 Session ID: " + session.getId());
             System.out.println("⏰ Session timeout: " + session.getMaxInactiveInterval());
             
-            // Redirect to frontend success page
-            String frontendUrl = "http://localhost:5173/auth/success?email=" + email + 
+            // Force redirect to http://localhost:5173 only
+            String base = "http://localhost:5173";
+            String frontendUrl = base + "/auth/success?email=" + email +
                                "&userId=" + user.getId() +
                                "&sessionId=" + session.getId();
-            
             System.out.println("🚀 Redirecting to: " + frontendUrl);
             getRedirectStrategy().sendRedirect(request, response, frontendUrl);
             
@@ -103,8 +107,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             System.err.println("❌ OAuth2 Success Handler Error: " + e.getMessage());
             e.printStackTrace();
             // Redirect to frontend with error
+            String base = "http://localhost:5173";
             getRedirectStrategy().sendRedirect(request, response, 
-                "http://localhost:5173/auth/error?error=oauth2_login_failed");
+                base + "/auth/error?error=oauth2_login_failed");
         }
     }
 }

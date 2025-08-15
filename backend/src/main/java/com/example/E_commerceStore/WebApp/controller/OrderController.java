@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import com.example.E_commerceStore.WebApp.dto.OrderDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,7 +22,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin(origins = "http://localhost:5174", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}, allowCredentials = "true")
 public class OrderController {
     
     @Autowired
@@ -136,19 +137,27 @@ public class OrderController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             HttpSession session) {
-        
+        String sessionId = session.getId();
         Long userId = (Long) session.getAttribute("userId");
+        System.out.println("[OrderController] /my-orders sessionId=" + sessionId + ", userId=" + userId);
         if (userId == null) {
+            System.out.println("[OrderController] /my-orders: userId is null, returning 401");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("error", "Authentication required"));
         }
-        
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<Order> orders = orderService.getUserOrders(userId, pageable);
-            
-            return ResponseEntity.ok(orders);
+            System.out.println("[OrderController] /my-orders: found " + orders.getTotalElements() + " orders for userId=" + userId);
+            // Map to DTO for safe serialization
+            Map<String, Object> result = new HashMap<>();
+            result.put("content", orders.getContent().stream().map(OrderDTO::new).collect(java.util.stream.Collectors.toList()));
+            result.put("totalElements", orders.getTotalElements());
+            result.put("totalPages", orders.getTotalPages());
+            result.put("page", orders.getNumber());
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
+            System.out.println("[OrderController] /my-orders: exception: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", e.getMessage()));
         }

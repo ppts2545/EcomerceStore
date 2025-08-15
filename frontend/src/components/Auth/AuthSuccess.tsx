@@ -8,7 +8,7 @@ const AuthSuccess: React.FC = () => {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    const email = urlParams.get('email');
+  const email = urlParams.get('email');
     const userId = urlParams.get('userId');
     const sessionId = urlParams.get('sessionId');
 
@@ -41,7 +41,7 @@ const AuthSuccess: React.FC = () => {
       } else {
         // Redirect to main page smoothly
         setTimeout(() => {
-          window.location.href = 'http://localhost:5174/';
+          window.location.href = 'http://localhost:5173/';
         }, 1000); // 1 second delay for user to see success message
       }
     } else {

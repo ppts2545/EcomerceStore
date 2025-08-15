@@ -61,7 +61,7 @@ const NewCheckout: React.FC = () => {
       }
 
       // Load cart data from API
-      const cartResponse = await fetch('http://localhost:8082/api/session-cart', {
+  const cartResponse = await fetch('http://localhost:8082/api/session-cart', {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -133,7 +133,7 @@ const NewCheckout: React.FC = () => {
       const item = cartItems.find(item => item.id === itemId);
       if (!item) return;
 
-      const response = await fetch('http://localhost:8082/api/session-cart/update', {
+  const response = await fetch('http://localhost:8082/api/session-cart/update', {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -163,7 +163,7 @@ const NewCheckout: React.FC = () => {
       const item = cartItems.find(item => item.id === itemId);
       if (!item) return;
 
-      const response = await fetch(`http://localhost:8082/api/session-cart/remove/${item.productId}`, {
+  const response = await fetch(`http://localhost:8082/api/session-cart/remove/${item.productId}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {

@@ -160,26 +160,22 @@ function App() {
 
   // 🔐 Authentication handlers
   const handleLogin = async (email: string, password: string) => {
-    try {
-      const response = await AuthService.login({ email, password });
-      
-      if (response.success && response.user) {
-        setUser(response.user);
-        setShowAuthModal(false);
-        
-        // Start session monitoring after successful login
-        SessionService.startSessionMonitoring(() => {
-          setUser(null);
-          setCartCount(0);
-          alert('⚠️ เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
-        });
-        
-        alert(`✅ ยินดีต้อนรับ ${response.user.firstName}!`);
-      } else {
-        throw new Error(response.message || 'การเข้าสู่ระบบล้มเหลว');
-      }
-    } catch (error) {
-      throw error; // Re-throw to let AuthModal handle the error display
+    const response = await AuthService.login({ email, password });
+
+    if (response.success && response.user) {
+      setUser(response.user);
+      setShowAuthModal(false);
+
+      // Start session monitoring after successful login
+      SessionService.startSessionMonitoring(() => {
+        setUser(null);
+        setCartCount(0);
+        alert('⚠️ เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+      });
+
+      alert(`✅ ยินดีต้อนรับ ${response.user.firstName}!`);
+    } else {
+      throw new Error(response.message || 'การเข้าสู่ระบบล้มเหลว');
     }
   };
 
@@ -190,26 +186,22 @@ function App() {
     lastName: string;
     phoneNumber?: string;
   }) => {
-    try {
-      const response = await AuthService.register(userData);
-      
-      if (response.success && response.user) {
-        setUser(response.user);
-        setShowAuthModal(false);
-        
-        // Start session monitoring after successful registration
-        SessionService.startSessionMonitoring(() => {
-          setUser(null);
-          setCartCount(0);
-          alert('⚠️ เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
-        });
-        
-        alert(`✅ สมัครสมาชิกสำเร็จ! ยินดีต้อนรับ ${response.user.firstName}!`);
-      } else {
-        throw new Error(response.message || 'การสมัครสมาชิกล้มเหลว');
-      }
-    } catch (error) {
-      throw error; // Re-throw to let AuthModal handle the error display
+    const response = await AuthService.register(userData);
+
+    if (response.success && response.user) {
+      setUser(response.user);
+      setShowAuthModal(false);
+
+      // Start session monitoring after successful registration
+      SessionService.startSessionMonitoring(() => {
+        setUser(null);
+        setCartCount(0);
+        alert('⚠️ เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
+      });
+
+      alert(`✅ สมัครสมาชิกสำเร็จ! ยินดีต้อนรับ ${response.user.firstName}!`);
+    } else {
+      throw new Error(response.message || 'การสมัครสมาชิกล้มเหลว');
     }
   };
 
@@ -262,6 +254,7 @@ function App() {
       await updateCartCount();
       alert('✅ เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว!');
     } catch (error) {
+      console.error('Error adding product to cart:', error);
       alert('❌ ไม่สามารถเพิ่มสินค้าลงตะกร้าได้');
     }
   };
@@ -279,7 +272,7 @@ function App() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8082/api/products');
+  const response = await fetch('http://localhost:8082/api/products');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -324,7 +317,7 @@ function App() {
       console.log('✅ Products loaded with media:', productsWithMedia);
     } catch (error) {
       console.error('❌ Error fetching products:', error);
-      setError('Failed to load products. Make sure backend is running on port 8082.');
+  setError('Failed to load products. Make sure backend is running on port 8082.');
     } finally {
       setLoading(false);
     }
@@ -380,7 +373,7 @@ function App() {
     console.log('✅ Starting API call...');
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:8082/api/products', {
+  const response = await fetch('http://localhost:8082/api/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -424,7 +417,7 @@ function App() {
     
     setIsSubmitting(true);
     try {
-      const response = await fetch(`http://localhost:8082/api/products/${editingProduct.id}`, {
+  const response = await fetch(`http://localhost:8082/api/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -465,7 +458,7 @@ function App() {
 
     setIsDeleting(productId);
     try {
-      const response = await fetch(`http://localhost:8082/api/products/${productId}`, {
+  const response = await fetch(`http://localhost:8082/api/products/${productId}`, {
         method: 'DELETE'
       });
 
@@ -649,33 +642,8 @@ function App() {
           </>
         )}
         
-        <section style={{ padding: isProductDetailPage ? '20px 0' : '20px 0' }}>
+        <section style={{ padding: isProductDetailPage ? '20px 0' : '40px 0', backgroundColor: isProductDetailPage ? '#fff' : '#f8fafc'}}>
           <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 15px' }}>
-            
-            {/* URL Info Panel - Hide on product detail page */}
-            {!isProductDetailPage && (
-              <div style={{
-                backgroundColor: 'white',
-                padding: '10px 20px',
-                borderRadius: '8px',
-                marginBottom: '20px',
-                textAlign: 'center',
-                border: `2px solid ${isAdminPage ? '#28a745' : '#17a2b8'}`
-              }}>
-                <p style={{ margin: 0, fontSize: '14px' }}>
-                  📍 <strong>Current URL:</strong> {currentPath} 
-                  {isAdminPage ? (
-                    <span style={{ color: '#28a745', fontWeight: 'bold' }}> - Admin Page ✅</span>
-                  ) : (
-                    <span style={{ color: '#666' }}> - Guest Page (เข้า <a href="/admin" onClick={(e) => {
-                      e.preventDefault();
-                      window.history.pushState({}, '', '/admin');
-                      setCurrentPath('/admin');
-                    }} style={{ color: '#007bff' }}>/admin</a> เพื่อจัดการสินค้า)</span>
-                  )}
-                </p>
-              </div>
-            )}
 
             {/* 🛍️ Product Detail Page */}
             {isProductDetailPage ? (
@@ -857,7 +825,7 @@ function App() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleDeleteProduct(product.id);
+                                      handleDeleteProduct(product.id, product.name);
                                     }}
                                     disabled={isDeleting === product.id}
                                     style={{

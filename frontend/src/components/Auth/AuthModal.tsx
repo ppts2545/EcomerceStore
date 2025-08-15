@@ -152,7 +152,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin, onRegis
     onClose(); // Close modal before redirecting
     // Redirect to OAuth2 authorization endpoint
     if (provider === 'google') {
-      window.location.href = `http://localhost:8082/oauth2/authorization/${provider}`;
+  window.location.href = `http://localhost:8082/oauth2/authorization/${provider}`;
     }
   };
 

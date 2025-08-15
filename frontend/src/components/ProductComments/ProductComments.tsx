@@ -151,7 +151,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({
 
   const loadStats = async () => {
     try {
-      const response = await fetch(`http://localhost:8082/api/comments/product/${productId}/stats`, {
+  const response = await fetch(`http://localhost:8082/api/comments/product/${productId}/stats`, {
         credentials: 'include'
       });
       if (response.ok) {
@@ -165,7 +165,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({
 
   const checkUserCommented = async () => {
     try {
-      const response = await fetch(`http://localhost:8082/api/comments/product/${productId}/user-commented`, {
+  const response = await fetch(`http://localhost:8082/api/comments/product/${productId}/user-commented`, {
         credentials: 'include'
       });
       if (response.ok) {
@@ -182,7 +182,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({
     if (!newComment.trim()) return;
 
     try {
-      const response = await fetch(`http://localhost:8082/api/comments/product/${productId}`, {
+  const response = await fetch(`http://localhost:8082/api/comments/product/${productId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -213,7 +213,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({
     if (!replyContent.trim()) return;
 
     try {
-      const response = await fetch(`http://localhost:8082/api/comments/${commentId}/reply`, {
+  const response = await fetch(`http://localhost:8082/api/comments/${commentId}/reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -238,7 +238,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({
     if (!editContent.trim()) return;
 
     try {
-      const response = await fetch(`http://localhost:8082/api/comments/${commentId}`, {
+  const response = await fetch(`http://localhost:8082/api/comments/${commentId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -263,7 +263,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({
     if (!confirm('Are you sure you want to delete this comment?')) return;
 
     try {
-      const response = await fetch(`http://localhost:8082/api/comments/${commentId}`, {
+  const response = await fetch(`http://localhost:8082/api/comments/${commentId}`, {
         method: 'DELETE',
         credentials: 'include'
       });
