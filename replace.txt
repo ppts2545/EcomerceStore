@@ -1,0 +1,18 @@
+# --- Stripe keys (ลบทุก literal ออกหมด) ---
+regex:sk_(test|live)_[0-9A-Za-z]+==>STRIPE_SECRET_KEY
+regex:pk_(test|live)_[0-9A-Za-z]+==>STRIPE_PUBLISHABLE_KEY
+# สำหรับเคสที่เขียนคีย์แล้วมีอักขระแปลก ๆ ต่อท้าย (เช่น ... หรือ _etc)
+regex:sk_(test|live)_[^ \t\r\n"']+==>STRIPE_SECRET_KEY
+regex:pk_(test|live)_[^ \t\r\n"']+==>STRIPE_PUBLISHABLE_KEY
+
+# --- Spring properties: บังคับให้อ่านจาก ENV เท่านั้น ---
+regex:^stripe\.api\.key\s*=\s*.*$==>stripe.api.key=${STRIPE_SECRET_KEY}
+
+# --- บรรทัดค่าคีย์ใน .env ต่าง ๆ: เก็บไฟล์ไว้ แต่ใส่ค่า placeholder ปลอดภัย ---
+# ตัวอย่าง: STRIPE_SECRET_KEY=REDACTED_USE_ENV
+regex:^(STRIPE_[A-Z_]*KEY)\s*=\s*.*$==>\1=REDACTED_USE_ENV
+
+# (ตัวเลือกเสริม: ถ้าอยากกัน provider อื่นด้วย ค่อยเพิ่มล่างนี้)
+# regex:ghp_[A-Za-z0-9]{36}==>GITHUB_TOKEN
+# regex:AKIA[0-9A-Z]{16}==>AWS_ACCESS_KEY_ID
+# regex:AIza[0-9A-Za-z\-_]{35}==>GOOGLE_API_KEY

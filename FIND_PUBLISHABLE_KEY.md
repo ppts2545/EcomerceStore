@@ -10,7 +10,7 @@
 
 ## ⚡ Publishable Key มีหน้าตาแบบนี้:
 ```
-pk_test_51RvUSQA1BSnPghSQ...
+STRIPE_PUBLISHABLE_KEY
 ```
 
 ## 🔧 หลังจากได้ Publishable Key แล้ว:

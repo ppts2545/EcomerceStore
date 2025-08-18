@@ -50,7 +50,7 @@ Name: Test User
 ### ขั้นตอนเปลี่ยนเป็น Live Mode:
 1. ยืนยันตัวตนใน Stripe Dashboard
 2. เพิ่มบัญชีธนาคารของคุณ
-3. เปลี่ยน keys เป็น `sk_live_...` และ `pk_live_...`
+3. เปลี่ยน keys เป็น `STRIPE_SECRET_KEY` และ `STRIPE_PUBLISHABLE_KEY`
 4. อัพเดทใน `application-prod.properties`
 
 ### ค่าธรรมเนียม Stripe:

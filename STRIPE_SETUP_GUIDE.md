@@ -12,8 +12,8 @@
 หลังจากลงทะเบียนแล้ว:
 1. ไปที่ Dashboard → Developers → API keys
 2. คัดลอก:
-   - **Publishable key** (pk_test_... หรือ pk_live_...)
-   - **Secret key** (sk_test_... หรือ sk_live_...)
+   - **Publishable key** (STRIPE_PUBLISHABLE_KEY)
+   - **Secret key** (STRIPE_SECRET_KEY)
 
 ### 3. **ตั้งค่า Webhook**
 1. ไปที่ Dashboard → Developers → Webhooks
@@ -37,16 +37,16 @@
 
 ```properties
 # Stripe Configuration (LIVE MODE)
-stripe.api.key=sk_live_your_actual_secret_key
-stripe.publishable.key=pk_live_your_actual_publishable_key  
+stripe.api.key=STRIPE_SECRET_KEY
+stripe.publishable.key=STRIPE_PUBLISHABLE_KEY  
 stripe.webhook.secret=whsec_your_actual_webhook_secret
 ```
 
 ## 💰 **วิธีการรับเงิน**
 
 ### **Test Mode vs Live Mode**
-- **Test Mode**: เงินไม่จริง (sk_test_... / pk_test_...)
-- **Live Mode**: เงินจริง (sk_live_... / pk_live_...)
+- **Test Mode**: เงินไม่จริง (STRIPE_SECRET_KEY / STRIPE_PUBLISHABLE_KEY)
+- **Live Mode**: เงินจริง (STRIPE_SECRET_KEY / STRIPE_PUBLISHABLE_KEY)
 
 ### **การโอนเงิน**
 - Stripe จะโอนเงินให้อัตโนมัติทุกวันจันทร์

@@ -9,7 +9,7 @@ import {
 import './BeautifulPayment.css';
 
 // Load Stripe with your publishable key
-const stripePromise = loadStripe('pk_test_51RvUSQA1BSnPghSQ87n7PoHLDbGAzINB4Zco1hHOzamVLI34NcEsDWTRlsfajZC5DJUN0o8arzKLHauTWVt8LXmF00clLrDBFw');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string);
 
 interface CheckoutFormProps {
   total: number;

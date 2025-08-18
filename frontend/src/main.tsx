@@ -6,7 +6,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import './index.css'
 import Router from './Router'
 
-const stripePromise = loadStripe('pk_test_51RvUSQABv04WEGHm16k0p2s8kktTTQgUkUrfJbcIQJp2Lj1YJwV5FLPJjnO5nT5iWJXgWa6pSrWUjH5mISlL3jxX00GN3awOxh');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -8,10 +8,10 @@
 
 ```
 ✅ Publishable key (เอาตัวนี้)
-   pk_test_51RvUSQA1BSnPghSQ...
+   STRIPE_PUBLISHABLE_KEY
    
 ✅ Secret key (คุณมีแล้ว)
-   sk_test_51RvUSQA1BSnPghSQFRQWl0M3GeZb1RzGz7NIqh2cRos...
+   STRIPE_SECRET_KEY
 ```
 
 4. **คลิก "Reveal test key"** ข้าง Publishable key
@@ -26,5 +26,5 @@
 
 ## ตัวอย่าง Publishable Key:
 ```
-pk_test_51RvUSQA1BSnPghSQxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+STRIPE_PUBLISHABLE_KEY
 ```

@@ -98,7 +98,7 @@ import BeautifulPayment from './components/Payment/BeautifulPayment';
 
 ### **Environment Variables ที่ต้องมี**:
 ```
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_51RvUSQA1BSnPghSQ...
+VITE_STRIPE_PUBLISHABLE_KEY=YOUR_STRIPE_PUBLISHABLE_KEY
 ```
 
 ### **Backend API Endpoints**:

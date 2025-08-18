@@ -9,8 +9,8 @@ Go to Developers > API keys:
 ## 2. Backend Environment Variables
 Set securely (shell, systemd, Docker, etc):
 ```
-export STRIPE_SECRET_KEY=sk_live_xxxxxxxxxxxxxx
-export STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxx
+export STRIPE_SECRET_KEY=YOUR_STRIPE_SECRET_KEY
+export STRIPE_PUBLISHABLE_KEY=YOUR_STRIPE_PUBLISHABLE_KEY
 export STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxx
 export stripe.mode=live
 ```
