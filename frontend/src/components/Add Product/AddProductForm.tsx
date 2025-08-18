@@ -1,120 +1,131 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './AddProductForm.css';
 
-interface MediaItem {
+// ====== Types ======
+export interface MediaItem {
   id: string;
   type: 'image' | 'video';
-  url: string;
+  url: string; // preview URL (object URL)
+  file: File; // real file
   thumbnail?: string;
   alt?: string;
 }
 
-interface Product {
-  id?: number;
+// ข้อมูลที่เราจะส่งออกไปยัง parent (ปรับให้รองรับไฟล์หลัก & มีเดีย)
+export type SubmitPayload = {
   name: string;
   description: string;
   price: number;
-  imageUrl: string;
   stock: number;
-  media?: MediaItem[];
-}
+  tags: string[];
+  media: MediaItem[]; // รูป/วิดีโอเพิ่มเติม (สำหรับสไลด์)
+  imageFile: File | null; // รูปหลักของสินค้า
+};
 
 interface AddProductFormProps {
-  onSubmit: (product: Omit<Product, 'id'>) => Promise<void>;
+  onSubmit: (product: SubmitPayload) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
-const AddProductForm: React.FC<AddProductFormProps> = ({ 
-  onSubmit, 
-  onCancel, 
-  isLoading = false 
-}) => {
+const MAX_MEDIA = 10;
+
+const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, onCancel, isLoading = false }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    imageUrl: '',
-    stock: ''
+    stock: '',
+    tags: [] as string[],
   });
 
+  const categoryOptions = [
+    { value: 'เทคโนโลยี', label: '💻 เทคโนโลยี' },
+    { value: 'แฟชั่น', label: '👕 แฟชั่น' },
+    { value: 'บ้าน & สวน', label: '🏠 บ้าน & สวน' },
+    { value: 'เกม & ของเล่น', label: '🎮 เกม & ของเล่น' },
+    { value: 'ความงาม', label: '💄 ความงาม' },
+    { value: 'กีฬา & ฟิตเนส', label: '⚽ กีฬา & ฟิตเนส' },
+    { value: 'ยานยนต์', label: '🚗 ยานยนต์' },
+    { value: 'อาหาร & เครื่องดื่ม', label: '🍕 อาหาร & เครื่องดื่ม' },
+    { value: 'หนังสือ & การศึกษา', label: '📚 หนังสือ & การศึกษา' },
+    { value: 'เสียงเพลง', label: '🎵 เสียงเพลง' },
+    { value: 'แม่และเด็ก', label: '👶 แม่และเด็ก' },
+    { value: 'สัตว์เลี้ยง', label: '🐕 สัตว์เลี้ยง' },
+  ];
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
-  const [newMediaUrl, setNewMediaUrl] = useState('');
   const [newMediaType, setNewMediaType] = useState<'image' | 'video'>('image');
-  const [newMediaThumbnail, setNewMediaThumbnail] = useState('');
+  const [newMediaFile, setNewMediaFile] = useState<File | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // ====== Effects: preview cleanup ======
+  useEffect(() => {
+    if (!imageFile) {
+      // ถ้าเคยสร้าง preview มาก่อนให้ revoke ก่อน
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      setImagePreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setImagePreview(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [imageFile]);
+
+  // ====== Validation ======
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'กรุณาใส่ชื่อสินค้า';
-    }
+    if (!formData.name.trim()) newErrors.name = 'กรุณาใส่ชื่อสินค้า';
+    if (!formData.description.trim()) newErrors.description = 'กรุณาใส่คำอธิบายสินค้า';
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'กรุณาใส่คำอธิบายสินค้า';
-    }
+    if (!formData.price) newErrors.price = 'กรุณาใส่ราคาสินค้า';
+    else if (Number.isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) newErrors.price = 'ราคาต้องมากกว่า 0';
 
-    if (!formData.price) {
-      newErrors.price = 'กรุณาใส่ราคาสินค้า';
-    } else if (parseFloat(formData.price) <= 0) {
-      newErrors.price = 'ราคาต้องมากกว่า 0';
-    }
+    if (!imageFile) newErrors.imageFile = 'กรุณาอัปโหลดรูปภาพสินค้า';
 
-    if (!formData.imageUrl.trim()) {
-      newErrors.imageUrl = 'กรุณาใส่ URL รูปภาพ';
-    } else if (!isValidUrl(formData.imageUrl)) {
-      newErrors.imageUrl = 'URL รูปภาพไม่ถูกต้อง';
-    }
+    if (!formData.stock) newErrors.stock = 'กรุณาใส่จำนวนสินค้าคงคลัง';
+    else if (Number.isNaN(parseInt(formData.stock)) || parseInt(formData.stock) < 0) newErrors.stock = 'จำนวนสินค้าต้องมากกว่าหรือเท่ากับ 0';
 
-    if (!formData.stock) {
-      newErrors.stock = 'กรุณาใส่จำนวนสินค้าคงคลัง';
-    } else if (parseInt(formData.stock) < 0) {
-      newErrors.stock = 'จำนวนสินค้าต้องมากกว่าหรือเท่ากับ 0';
-    }
+    if (!formData.tags || formData.tags.length === 0) newErrors.tags = 'กรุณาเลือกหมวดหมู่สินค้าอย่างน้อย 1 หมวด';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const isValidUrl = (url: string) => {
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
+  // ====== Handlers ======
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('🔧 Form submitted!');
-    console.log('Form data:', formData);
-    
-    if (!validateForm()) {
-      console.log('❌ Validation failed');
-      return;
-    }
+    if (!validateForm()) return;
 
-    console.log('✅ Validation passed, calling onSubmit...');
+    const payload: SubmitPayload = {
+      name: formData.name.trim(),
+      description: formData.description.trim(),
+      price: parseFloat(formData.price),
+      stock: parseInt(formData.stock),
+      tags: formData.tags,
+      media: mediaItems,
+      imageFile,
+    };
 
     try {
-      await onSubmit({
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        price: parseFloat(formData.price),
-        imageUrl: formData.imageUrl.trim(),
-        stock: parseInt(formData.stock),
-        media: mediaItems.length > 0 ? mediaItems : undefined
+      await onSubmit(payload);
+      // cleanup object URLs สำหรับ media
+      mediaItems.forEach((m) => {
+        try { URL.revokeObjectURL(m.url); } catch {}
       });
-      
-      console.log('✅ onSubmit completed successfully');
-      
-      // Reset form
-      setFormData({ name: '', description: '', price: '', imageUrl: '', stock: '' });
+
+      // reset form
+      setFormData({ name: '', description: '', price: '', stock: '', tags: [] });
+      setImageFile(null);
       setMediaItems([]);
+      setNewMediaFile(null);
       setErrors({});
     } catch (error) {
       console.error('❌ Error submitting form:', error);
@@ -123,89 +134,83 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-  // Media management functions
+  const handleTagChange = (tag: string) => {
+    setFormData((prev) => {
+      const next = prev.tags.includes(tag) ? prev.tags.filter((t) => t !== tag) : [...prev.tags, tag];
+      return { ...prev, tags: next };
+    });
+    if (errors.tags) setErrors((prev) => ({ ...prev, tags: '' }));
+  };
+
   const addMediaItem = () => {
-    if (!newMediaUrl.trim()) return;
-    
-    // จำกัดไม่เกิน 10 media items
-    if (mediaItems.length >= 10) {
-      alert('⚠️ สามารถเพิ่มรูปภาพ/วีดีโอได้สูงสุด 10 รายการเท่านั้น');
+    if (!newMediaFile) return;
+    if (mediaItems.length >= MAX_MEDIA) {
+      alert(`⚠️ สามารถเพิ่มรูปภาพ/วีดีโอได้สูงสุด ${MAX_MEDIA} รายการเท่านั้น`);
       return;
     }
 
-    const newMediaItem: MediaItem = {
+    let type: 'image' | 'video' = newMediaType;
+    if (newMediaFile.type.startsWith('image/')) type = 'image';
+    else if (newMediaFile.type.startsWith('video/')) type = 'video';
+
+    const previewUrl = URL.createObjectURL(newMediaFile);
+    const newItem: MediaItem = {
       id: `media-${Date.now()}`,
-      type: newMediaType,
-      url: newMediaUrl.trim(),
-      thumbnail: newMediaType === 'video' ? newMediaThumbnail.trim() || undefined : undefined,
-      alt: `${formData.name || 'Product'} - ${newMediaType}`
+      type,
+      url: previewUrl,
+      file: newMediaFile,
+      alt: `${formData.name || 'Product'} - ${type}`,
     };
 
-    setMediaItems(prev => [...prev, newMediaItem]);
-    setNewMediaUrl('');
-    setNewMediaThumbnail('');
+    setMediaItems((prev) => [...prev, newItem]);
+    setNewMediaFile(null);
   };
 
   const removeMediaItem = (id: string) => {
-    setMediaItems(prev => prev.filter(item => item.id !== id));
+    setMediaItems((prev) => {
+      const target = prev.find((i) => i.id === id);
+      if (target) {
+        try { URL.revokeObjectURL(target.url); } catch {}
+      }
+      return prev.filter((i) => i.id !== id);
+    });
   };
 
-  const sampleImages = [
-    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=300&fit=crop',
-    'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=300&fit=crop',
-    'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop',
-    'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=400&h=300&fit=crop'
-  ];
-  
-  const sampleVideos = [
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4'
-  ];
-
-  const addSampleMedia = (type: 'image' | 'video') => {
-    if (mediaItems.length >= 10) {
-      alert('⚠️ สามารถเพิ่มรูปภาพ/วีดีโอได้สูงสุด 10 รายการเท่านั้น');
-      return;
-    }
-    
-    const samples = type === 'image' ? sampleImages : sampleVideos;
-    const randomUrl = samples[Math.floor(Math.random() * samples.length)];
-    
-    setNewMediaType(type);
-    setNewMediaUrl(randomUrl);
-    
-    if (type === 'video') {
-      // Set sample thumbnail for video
-      setNewMediaThumbnail(sampleImages[0]);
-    }
-  };
-
+  // ====== Render ======
   return (
     <div className="add-product-overlay">
       <div className="add-product-modal">
         <div className="modal-header">
           <h2>➕ เพิ่มสินค้าใหม่</h2>
-          <button 
-            onClick={onCancel} 
-            className="close-button"
-            disabled={isLoading}
-          >
-            ✕
-          </button>
+          <button onClick={onCancel} className="close-button" disabled={isLoading}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="product-form">
           <div className="form-grid">
+            {/* Category (multi-select with checkbox) */}
+            <div className="form-group">
+              <label>หมวดหมู่สินค้า *</label>
+              <div className="category-checkbox-group">
+                {categoryOptions.map((opt) => (
+                  <label key={opt.value} className="category-checkbox-label">
+                    <input
+                      type="checkbox"
+                      value={opt.value}
+                      checked={formData.tags.includes(opt.value)}
+                      onChange={() => handleTagChange(opt.value)}
+                      disabled={isLoading}
+                    />
+                    <span className="category-checkbox-icon">{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+              {errors.tags && <span className="error-text">{errors.tags}</span>}
+            </div>
+
             {/* Product Name */}
             <div className="form-group">
               <label htmlFor="name">ชื่อสินค้า *</label>
@@ -233,7 +238,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
                 onChange={handleInputChange}
                 placeholder="0.00"
                 step="0.01"
-                min="0"
+                min={0}
                 className={errors.price ? 'error' : ''}
                 disabled={isLoading}
               />
@@ -257,38 +262,37 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
             {errors.description && <span className="error-text">{errors.description}</span>}
           </div>
 
-          {/* Image URL */}
+          {/* Product Image Upload */}
           <div className="form-group">
-            <label htmlFor="imageUrl">URL รูปภาพ *</label>
+            <label htmlFor="imageFile">อัปโหลดรูปภาพสินค้า *</label>
             <input
-              type="url"
-              id="imageUrl"
-              name="imageUrl"
-              value={formData.imageUrl}
-              onChange={handleInputChange}
-              placeholder="https://example.com/image.jpg"
-              className={errors.imageUrl ? 'error' : ''}
+              type="file"
+              id="imageFile"
+              name="imageFile"
+              accept="image/*"
+              style={{ maxWidth: '180px' }}
+              onChange={(e) => {
+                const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+                setImageFile(file);
+                if (errors.imageFile) setErrors((prev) => ({ ...prev, imageFile: '' }));
+              }}
               disabled={isLoading}
             />
-            {errors.imageUrl && <span className="error-text">{errors.imageUrl}</span>}
-            
-            {/* Sample Images */}
-            <div className="sample-images">
-              <p>ตัวอย่างรูปภาพ:</p>
-              <div className="sample-grid">
-                {sampleImages.map((url, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, imageUrl: url }))}
-                    className="sample-image"
-                    disabled={isLoading}
-                  >
-                    <img src={url} alt={`Sample ${index + 1}`} />
-                  </button>
-                ))}
+            {imagePreview && (
+              <div style={{ marginTop: '10px' }}>
+                <strong>Preview:</strong>
+                <br />
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  style={{ maxWidth: '160px', maxHeight: '160px', borderRadius: '8px', border: '1px solid #eee', marginTop: '4px' }}
+                />
+                {imageFile && (
+                  <div style={{ fontSize: '0.9em', color: '#666', marginTop: '2px' }}>{imageFile.name}</div>
+                )}
               </div>
-            </div>
+            )}
+            {errors.imageFile && <span className="error-text">{errors.imageFile}</span>}
           </div>
 
           {/* Stock */}
@@ -301,7 +305,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
               value={formData.stock}
               onChange={handleInputChange}
               placeholder="0"
-              min="0"
+              min={0}
               className={errors.stock ? 'error' : ''}
               disabled={isLoading}
             />
@@ -311,79 +315,75 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
           {/* Additional Media Section */}
           <div className="form-group">
             <label>
-              📸 รูปภาพ/วีดีโอเพิ่มเติม (สำหรับสไลด์) 
-              <span className="media-count">
-                ({mediaItems.length}/10 รายการ)
-              </span>
+              📸 รูปภาพ/วีดีโอเพิ่มเติม (สำหรับสไลด์)
+              <span className="media-count"> ({mediaItems.length}/{MAX_MEDIA} รายการ)</span>
             </label>
             <div className="media-manager">
               <div className="add-media-section">
-                {mediaItems.length < 10 && (
+                {mediaItems.length < MAX_MEDIA && (
                   <div className="media-input-row">
-                    <select 
+                    <select
                       value={newMediaType}
-                      onChange={(e) => setNewMediaType(e.target.value as 'image' | 'video')}
+                      onChange={(e) => {
+                        setNewMediaType(e.target.value as 'image' | 'video');
+                        setNewMediaFile(null);
+                      }}
                       className="media-type-select"
-                    disabled={isLoading}
-                  >
-                    <option value="image">รูปภาพ</option>
-                    <option value="video">วีดีโอ</option>
-                  </select>
-                  
-                  <input
-                    type="url"
-                    value={newMediaUrl}
-                    onChange={(e) => setNewMediaUrl(e.target.value)}
-                    placeholder={`URL ${newMediaType === 'image' ? 'รูปภาพ' : 'วีดีโอ'}`}
-                    className="media-url-input"
-                    disabled={isLoading}
-                  />
-
-                  {newMediaType === 'video' && (
-                    <input
-                      type="url"
-                      value={newMediaThumbnail}
-                      onChange={(e) => setNewMediaThumbnail(e.target.value)}
-                      placeholder="URL ภาพย่อสำหรับวีดีโอ (ไม่ใส่ก็ได้)"
-                      className="media-thumbnail-input"
                       disabled={isLoading}
+                    >
+                      <option value="image">รูปภาพ</option>
+                      <option value="video">วีดีโอ</option>
+                    </select>
+                    <label htmlFor="mediaFile" style={{ marginRight: 8 }}>
+                      {newMediaType === 'image' ? 'เลือกรูปภาพ' : 'เลือกวิดีโอ'}
+                    </label>
+                    <input
+                      type="file"
+                      id="mediaFile"
+                      name="mediaFile"
+                      accept={newMediaType === 'image' ? 'image/*' : 'video/*'}
+                      onChange={(e) => {
+                        const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+                        setNewMediaFile(file);
+                      }}
+                      disabled={isLoading}
+                      style={{ maxWidth: '180px' }}
                     />
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={addMediaItem}
-                    disabled={!newMediaUrl.trim() || isLoading || mediaItems.length >= 10}
-                    className="add-media-btn"
-                  >
-                    ➕ เพิ่ม
-                  </button>
-                  
-                  {/* Sample Media Buttons */}
-                  <div className="sample-media-buttons">
-                    <button
-                      type="button"
-                      onClick={() => addSampleMedia('image')}
-                      disabled={isLoading || mediaItems.length >= 10}
-                      className="sample-btn image"
-                    >
-                      📸 ตัวอย่างรูป
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => addSampleMedia('video')}
-                      disabled={isLoading || mediaItems.length >= 10}
-                      className="sample-btn video"
-                    >
-                      🎬 ตัวอย่างวีดีโอ
+                    <button type="button" onClick={addMediaItem} disabled={!newMediaFile || isLoading || mediaItems.length >= MAX_MEDIA} className="add-media-btn">
+                      ➕ เพิ่ม
                     </button>
                   </div>
-                </div>
                 )}
-                
-                {mediaItems.length >= 10 && (
-                  <div className="media-limit-warning">
-                    ⚠️ สามารถเพิ่มรูปภาพ/วีดีโอได้สูงสุด 10 รายการเท่านั้น
+
+                {mediaItems.length >= MAX_MEDIA && (
+                  <div className="media-limit-warning">⚠️ สามารถเพิ่มรูปภาพ/วีดีโอได้สูงสุด {MAX_MEDIA} รายการเท่านั้น</div>
+                )}
+
+                {/* Preview for new media file */}
+                {newMediaFile && (
+                  <div style={{ marginTop: '8px' }}>
+                    <strong>Preview:</strong>
+                    <br />
+                    {newMediaFile.type.startsWith('image/') ? (
+                      <img
+                        src={URL.createObjectURL(newMediaFile)}
+                        alt="Preview"
+                        style={{ maxWidth: '120px', maxHeight: '120px', borderRadius: '6px', border: '1px solid #eee', marginTop: '2px' }}
+                        onLoad={(e) => {
+                          try { URL.revokeObjectURL((e.target as HTMLImageElement).src); } catch {}
+                        }}
+                      />
+                    ) : (
+                      <video
+                        src={URL.createObjectURL(newMediaFile)}
+                        controls
+                        style={{ maxWidth: '120px', maxHeight: '120px', borderRadius: '6px', border: '1px solid #eee', marginTop: '2px' }}
+                        onLoadedData={(e) => {
+                          try { URL.revokeObjectURL((e.target as HTMLVideoElement).src); } catch {}
+                        }}
+                      />
+                    )}
+                    <div style={{ fontSize: '0.9em', color: '#666', marginTop: '2px' }}>{newMediaFile.name}</div>
                   </div>
                 )}
               </div>
@@ -397,29 +397,34 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
                       <div key={item.id} className="media-item">
                         <div className="media-preview">
                           {item.type === 'image' ? (
-                            <img src={item.url} alt={item.alt} />
+                            <img
+                              src={item.url}
+                              alt={item.alt}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/120x120?text=No+Image';
+                              }}
+                            />
                           ) : (
                             <div className="video-preview">
-                              <img 
-                                src={item.thumbnail || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+Cjxwb2x5Z29uIHBvaW50cz0iMjgsNjAgNTIsNDAgMjgsMjAiIGZpbGw9IiM5QjlCOUIiLz4KPC9zdmc+'} 
-                                alt="Video thumbnail" 
+                              <img
+                                src={
+                                  item.thumbnail ||
+                                  'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+Cjxwb2x5Z29uIHBvaW50cz0iMjgsNjAgNTIsNDAgMjgsMjAiIGZpbGw9IiM5QjlCOUIiLz4KPC9zdmc+'
+                                }
+                                alt="Video thumbnail"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://via.placeholder.com/120x120?text=No+Image';
+                                }}
                               />
                               <div className="video-overlay">📹</div>
                             </div>
                           )}
                         </div>
                         <div className="media-info">
-                          <span className="media-type">
-                            {item.type === 'image' ? '🖼️ รูปภาพ' : '🎬 วีดีโอ'} #{index + 1}
-                          </span>
-                          <span className="media-url">{item.url.substring(0, 40)}...</span>
+                          <span className="media-type">{item.type === 'image' ? '🖼️ รูปภาพ' : '🎬 วีดีโอ'} #{index + 1}</span>
+                          <span className="media-url">{item.url?.substring(0, 40)}...</span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeMediaItem(item.id)}
-                          className="remove-media-btn"
-                          disabled={isLoading}
-                        >
+                        <button type="button" onClick={() => removeMediaItem(item.id)} className="remove-media-btn" disabled={isLoading}>
                           🗑️
                         </button>
                       </div>
@@ -430,47 +435,19 @@ const AddProductForm: React.FC<AddProductFormProps> = ({
             </div>
           </div>
 
-          {/* Image Preview */}
-          {formData.imageUrl && isValidUrl(formData.imageUrl) && (
-            <div className="form-group">
-              <label>ตัวอย่างรูปภาพ:</label>
-              <div className="image-preview">
-                <img 
-                  src={formData.imageUrl} 
-                  alt="Preview" 
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
           {/* Form Actions */}
           <div className="form-actions">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="cancel-button"
-              disabled={isLoading}
-            >
+            <button type="button" onClick={onCancel} className="cancel-button" disabled={isLoading}>
               ยกเลิก
             </button>
-            <button
-              type="submit"
-              className="submit-button"
-              disabled={isLoading}
-            >
+            <button type="submit" className="submit-button" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <span className="loading-spinner"></span>
                   กำลังเพิ่มสินค้า...
                 </>
               ) : (
-                <>
-                  ✅ เพิ่มสินค้า
-                </>
+                <>✅ เพิ่มสินค้า</>
               )}
             </button>
           </div>

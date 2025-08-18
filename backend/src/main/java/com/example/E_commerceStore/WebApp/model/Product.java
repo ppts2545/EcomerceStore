@@ -1,4 +1,6 @@
 package com.example.E_commerceStore.WebApp.model;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -10,9 +12,24 @@ import java.util.List;
 @Entity
 @Table(name = "products")
 public class Product {
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "product_tags",
+        joinColumns = @JoinColumn(name = "product_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
+
+    public Set<Tag> getTags() { return tags; }
+    public void setTags(Set<Tag> tags) { this.tags = tags; }
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    // Many-to-One relationship with Store
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id")
+    private Store store;
     
     @Column(nullable = false)
     private String name;
@@ -23,13 +40,10 @@ public class Product {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
     
-    private String imageUrl;
     
     @Column(nullable = true)
     private Integer stock = 0;
     
-    @Column(nullable = true)
-    private String category;
     
     @Column(nullable = true)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -50,16 +64,13 @@ public class Product {
     
     // Constructors
     public Product() {}
-    
-    public Product(Long id, String name, String description, BigDecimal price, String imageUrl, Integer stock) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.price = price;
-        this.imageUrl = imageUrl;
-        this.stock = stock;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+
+    public Store getStore() {
+        return store;
+    }
+
+    public void setStore(Store store) {
+        this.store = store;
     }
     
     // Getters และ Setters
@@ -75,13 +86,6 @@ public class Product {
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
     
-    public String getImageUrl() {
-        if (imageUrl == null || imageUrl.isEmpty()) {
-            return "/placeholder-product.jpg";
-        }
-        return imageUrl;
-    }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { 
@@ -89,8 +93,6 @@ public class Product {
         this.updatedAt = LocalDateTime.now();
     }
     
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
     
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

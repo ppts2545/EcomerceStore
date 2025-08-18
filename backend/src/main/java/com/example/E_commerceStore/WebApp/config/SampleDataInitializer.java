@@ -89,62 +89,52 @@ public class SampleDataInitializer implements CommandLineRunner {
         
         // สินค้าหมวดอิเล็กทรอนิกส์ พร้อม Media Slider
             Product macbook = createProduct("MacBook Air M2", "13-inch laptop with M2 chip, 8GB RAM, 256GB SSD, all-day battery", 
-                         new BigDecimal("1099.99"), "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400&h=300&fit=crop", 
-                         10, "อิเล็กทรอนิกส์");
+                         new BigDecimal("1099.99"), 10);
             // เพิ่ม media items สำหรับ MacBook
             addMediaToProduct(macbook, "image", "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop", null, "MacBook Air - Front View", 0);
             addMediaToProduct(macbook, "image", "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=300&fit=crop", null, "MacBook Air - Keyboard", 1);
             addMediaToProduct(macbook, "video", "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=150&h=150&fit=crop", "MacBook Air Demo Video", 2);
             
             Product iphone = createProduct("iPhone 15 Pro", "Latest iPhone with titanium design, A17 Pro chip, and advanced camera system", 
-                         new BigDecimal("999.99"), "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop", 
-                         15, "อิเล็กทรอนิกส์");
+                         new BigDecimal("999.99"), 15);
             // เพิ่ม media items สำหรับ iPhone
             addMediaToProduct(iphone, "image", "https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=400&h=300&fit=crop", null, "iPhone - Different Colors", 0);
             addMediaToProduct(iphone, "image", "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=400&h=300&fit=crop", null, "iPhone - Camera Close-up", 1);
             
             Product samsung = createProduct("Samsung Galaxy S24", "Flagship Android phone with advanced AI features and stunning display", 
-                         new BigDecimal("799.99"), "https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?w=400&h=300&fit=crop", 
-                         12, "อิเล็กทรอนิกส์");
+                         new BigDecimal("799.99"), 12);
             
             // สินค้าหมวดแฟชั่น
             Product tshirt = createProduct("Premium Cotton T-Shirt", "100% organic cotton, comfortable fit, available in multiple colors", 
-                         new BigDecimal("29.99"), "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=300&fit=crop", 
-                         50, "แฟชั่น");
+                         new BigDecimal("29.99"), 50);
             // เพิ่ม media items สำหรับ T-Shirt
             addMediaToProduct(tshirt, "image", "https://images.unsplash.com/photo-1583743814966-8936f37f4678?w=400&h=300&fit=crop", null, "T-Shirt - White", 0);
             addMediaToProduct(tshirt, "image", "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400&h=300&fit=crop", null, "T-Shirt - Black", 1);
             addMediaToProduct(tshirt, "image", "https://images.unsplash.com/photo-1562157873-818bc0726f68?w=400&h=300&fit=crop", null, "T-Shirt - Colors", 2);
             
             createProduct("Designer Jeans", "Premium denim with perfect fit and modern styling", 
-                         new BigDecimal("89.99"), "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=300&fit=crop", 
-                         30, "แฟชั่น");
+                         new BigDecimal("89.99"), 30);
 
             // สินค้าหมวดความงาม
             createProduct("Luxury Face Cream", "Anti-aging moisturizer with natural ingredients", 
-                         new BigDecimal("45.99"), "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=300&fit=crop", 
-                         25, "ความงาม");
+                         new BigDecimal("45.99"), 25);
             
             createProduct("Matte Lipstick Set", "Long-lasting matte finish in 6 beautiful shades", 
-                         new BigDecimal("32.99"), "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400&h=300&fit=crop", 
-                         40, "ความงาม");
+                         new BigDecimal("32.99"), 40);
 
             // สินค้าหมวดของใช้ในบ้าน
             createProduct("Smart Rice Cooker", "1.8L capacity with multiple cooking modes", 
-                         new BigDecimal("189.99"), "https://images.unsplash.com/photo-1585515656706-e906c3a4bece?w=400&h=300&fit=crop", 
-                         12, "ของใช้ในบ้าน");
+                         new BigDecimal("189.99"), 12);
             
             Product blender = createProduct("High-Speed Blender", "1500W motor, perfect for smoothies and food prep", 
-                         new BigDecimal("249.99"), "https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=400&h=300&fit=crop", 
-                         8, "ของใช้ในบ้าน");
+                         new BigDecimal("249.99"), 8);
             // เพิ่ม media items สำหรับ Blender
             addMediaToProduct(blender, "image", "https://images.unsplash.com/photo-1610736020395-fd7b6a3b6bb2?w=400&h=300&fit=crop", null, "Blender - In Use", 0);
             addMediaToProduct(blender, "video", "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4", "https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=150&h=150&fit=crop", "Blender Demo", 1);
 
             // สินค้าหมวดหนังสือ
             createProduct("JavaScript Programming Guide", "Complete guide to modern JavaScript development", 
-                         new BigDecimal("59.99"), "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=300&fit=crop", 
-                         20, "หนังสือ");
+                         new BigDecimal("59.99"), 20);
 
             System.out.println("✅ Sample products created: 10 products with media slider support");
     }
@@ -162,14 +152,12 @@ public class SampleDataInitializer implements CommandLineRunner {
     }
 
     private Product createProduct(String name, String description, BigDecimal price, 
-                              String imageUrl, Integer stock, String category) {
+                              Integer stock) {
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
         product.setPrice(price);
-        product.setImageUrl(imageUrl);
         product.setStock(stock);
-        product.setCategory(category);
         product.setCreatedAt(LocalDateTime.now());
         product.setUpdatedAt(LocalDateTime.now());
         return productRepository.save(product);

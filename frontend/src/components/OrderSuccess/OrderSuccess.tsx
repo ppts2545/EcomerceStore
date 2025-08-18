@@ -333,7 +333,7 @@ const OrderSuccess: React.FC = () => {
                     src={item.product.imageUrl || '/placeholder-product.jpg'} 
                     alt={item.product.name}
                     onError={(e) => {
-                      e.currentTarget.src = '/placeholder-product.jpg';
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/120x120?text=No+Image';
                     }}
                   />
                 </div>

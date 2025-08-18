@@ -1,0 +1,78 @@
+:root{
+  /* ใช้ accent จากธีมหลักของคุณ (ปัจจุบันเป็นน้ำเงิน) */
+  --accent: #2563EB;
+  --pg-ink: #6B7280;   /* สีตัวเลขปกติ */
+  --pg-muted: #9CA3AF; /* สีจุดไข่ปลา/disabled */
+}
+
+.pg{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  margin:24px 0 8px;
+  user-select:none;
+}
+
+.pg__btn{
+  width:36px;
+  height:36px;
+  border-radius:999px;
+  border:none;
+  background:transparent;
+  color:var(--pg-ink);
+  font-size:20px;
+  line-height:1;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition:background .15s ease, color .15s ease, transform .05s ease, opacity .15s ease;
+}
+.pg__btn:hover:not(:disabled){ background:rgba(0,0,0,.05); color:#111827; }
+.pg__btn:disabled{ color:var(--pg-muted); opacity:.45; cursor:default; }
+
+.pg__list{
+  display:flex;
+  gap:28px;           /* เว้นระยะกว้างแบบตัวอย่าง */
+  list-style:none;
+  padding:0;
+  margin:0 6px;
+  align-items:center;
+}
+
+.pg__num{
+  min-width:44px;
+  height:36px;
+  padding:0 6px;
+  border-radius:8px;
+  border:none;
+  background:transparent;
+  color:var(--pg-ink);
+  font-size:20px;
+  line-height:36px;
+  text-align:center;
+  cursor:pointer;
+  transition:background .15s ease, color .15s ease, transform .05s ease, box-shadow .15s ease;
+}
+.pg__num:hover{ color:#111827; background:rgba(0,0,0,.04); }
+.pg__num.is-active{
+  background:var(--accent);
+  color:#fff;
+  font-weight:600;
+  box-shadow:0 6px 16px rgba(37,99,235,.28); /* น้ำเงิน; จะเปลี่ยนตาม --accent */
+}
+
+.pg__dots{
+  min-width:24px;
+  text-align:center;
+  color:var(--pg-muted);
+  font-size:18px;
+}
+
+/* Responsive เล็กลงนิดบนมือถือ */
+@media (max-width:640px){
+  .pg__list{ gap:10px; }
+  .pg__num{ min-width:36px; height:32px; line-height:32px; font-size:16px; }
+  .pg__btn{ width:32px; height:32px; font-size:18px; }
+}

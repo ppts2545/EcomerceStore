@@ -1,6 +1,8 @@
+
 package com.example.E_commerceStore.WebApp.repository;
 
 import com.example.E_commerceStore.WebApp.model.Product;
+import com.example.E_commerceStore.WebApp.model.Store;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,6 +11,18 @@ import java.util.List;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
+
+    // ดึงสินค้าตาม tag name หลายค่า (many-to-many)
+    List<Product> findByTagsNameIn(List<String> tagNames);
+
+    // ดึงสินค้าตาม tag name (single tag)
+    List<Product> findByTagsName(String tagName);
+
+    // ดึงสินค้าตาม tag name หลายค่า (10 รายการล่าสุด)
+    List<Product> findTop10ByTagsNameInOrderByCreatedAtDesc(List<String> tagNames);
+
+    // ดึงสินค้าใน tag เดียวกัน ยกเว้นสินค้าที่ระบุ (5 รายการ)
+    List<Product> findTop5ByTagsNameAndIdNotOrderByCreatedAtDesc(String tagName, Long excludeId);
     
     // ค้นหาสินค้าตามชื่อ (case insensitive)
     List<Product> findByNameContainingIgnoreCase(String name);
@@ -40,20 +54,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // สำหรับระบบแนะนำสินค้า - ดึงสินค้าล่าสุด 10 รายการ
     List<Product> findTop10ByOrderByCreatedAtDesc();
     
-    // ดึงสินค้าตามหมวดหมู่ (10 รายการล่าสุด)
-    List<Product> findTop10ByCategoryOrderByCreatedAtDesc(String category);
-    
-    // ดึงสินค้าตามหมวดหมู่หลายๆ หมวด (10 รายการล่าสุด)
-    List<Product> findTop10ByCategoryInOrderByCreatedAtDesc(List<String> categories);
-    
-    // ดึงสินค้าในหมวดเดียวกัน ยกเว้นสินค้าที่ระบุ (5 รายการ)
-    List<Product> findTop5ByCategoryAndIdNotOrderByCreatedAtDesc(String category, Long excludeId);
-    
-    // ค้นหาสินค้าตามหมวดหมู่
-    List<Product> findByCategory(String category);
-    
-    // ดึงหมวดหมู่ทั้งหมดที่มีสินค้า
-    @Query("SELECT DISTINCT p.category FROM Product p ORDER BY p.category")
-    List<String> findDistinctCategories();
+    // ค้นหาสินค้าตามร้านค้า
+    List<Product> findByStore(Store store);
+    List<Product> findByStoreId(Long storeId);
 
 }

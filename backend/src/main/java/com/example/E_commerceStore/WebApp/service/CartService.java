@@ -167,39 +167,37 @@ public class CartService {
      * รับรายการสินค้าแนะนำตามประวัติการซื้อ
      */
     public List<Product> getRecommendedProducts(User user) {
-        // ดึงหมวดหมู่ที่ผู้ใช้เคยซื้อ
+        // ดึง tag name ที่ผู้ใช้เคยซื้อ
         List<CartItem> cartItems = cartItemRepository.findByUser(user);
-        
         if (cartItems.isEmpty()) {
             // ถ้าไม่มีประวัติ ให้แนะนำสินค้าขายดี
             return productRepository.findTop10ByOrderByCreatedAtDesc();
         }
-        
-        // แนะนำสินค้าในหมวดเดียวกับที่เคยซื้อ
-        List<String> purchasedCategories = cartItems.stream()
-                .map(item -> item.getProduct().getCategory())
-                .distinct()
-                .toList();
-        
-        return productRepository.findTop10ByCategoryInOrderByCreatedAtDesc(purchasedCategories);
+        // รวม tag name ทั้งหมดที่เคยซื้อ
+        List<String> purchasedTags = cartItems.stream()
+            .flatMap(item -> item.getProduct().getTags().stream())
+            .map(tag -> tag.getName())
+            .distinct()
+            .toList();
+        // แนะนำสินค้าจาก tag ที่เคยซื้อ
+        return productRepository.findTop10ByTagsNameInOrderByCreatedAtDesc(purchasedTags);
     }
     
     /**
      * รับสินค้าที่ซื้อพร้อมกันบ่อย (Frequently Bought Together)
      */
     public List<Product> getFrequentlyBoughtTogether(Long productId) {
-        // สำหรับตอนนี้ ให้แนะนำสินค้าในหมวดเดียวกัน
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-        
-        return productRepository.findTop5ByCategoryAndIdNotOrderByCreatedAtDesc(
-                product.getCategory(), productId);
+    // สำหรับตอนนี้ ให้แนะนำสินค้าที่มี tag เดียวกัน (tag แรก)
+    Product product = productRepository.findById(productId)
+        .orElseThrow(() -> new RuntimeException("Product not found"));
+    var tags = product.getTags();
+    if (tags.isEmpty()) return List.of();
+    String tagName = tags.iterator().next().getName();
+    return productRepository.findTop5ByTagsNameAndIdNotOrderByCreatedAtDesc(tagName, productId);
     }
     
     /**
      * รับสินค้ายอดนิยมตามหมวดหมู่
      */
-    public List<Product> getPopularProductsByCategory(String category) {
-        return productRepository.findTop10ByCategoryOrderByCreatedAtDesc(category);
-    }
+    // Removed getPopularProductsByCategory(String category) as Product now uses tags, not category.
 }

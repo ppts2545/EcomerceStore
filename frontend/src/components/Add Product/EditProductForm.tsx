@@ -224,7 +224,9 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
                     className="sample-image"
                     disabled={isLoading}
                   >
-                    <img src={url} alt={`Sample ${index + 1}`} />
+                    <img src={url} alt={`Sample ${index + 1}`} onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/120x120?text=No+Image';
+                    }} />
                   </button>
                 ))}
               </div>
@@ -257,8 +259,7 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
                   src={formData.imageUrl} 
                   alt="Preview" 
                   onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/188x188?text=No+Image';
                   }}
                 />
               </div>

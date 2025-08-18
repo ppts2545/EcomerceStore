@@ -1,23 +1,38 @@
-import { useState, useEffect, useCallback } from 'react'
-import './App.css'
-import Header from './components/Header/Header'
-import BannerHotword from './components/Banner-Hotword/Banner-Hotword'
-import CategorySection from './components/Category-innerMain-Section/CategorySection'
-import AddProductForm from './components/Add Product/AddProductForm'
-import EditProductForm from './components/Add Product/EditProductForm'
-import AuthModal from './components/Auth/AuthModal'
-import Cart from './components/Cart/Cart'
-import ProductRating from './components/Product Rating/ProductRating'
-import AdminDashboard from './components/Admin/AdminDashboard'
-import AuthService, { type User } from './services/AuthService'
-import CartService from './services/CartService'
-import SessionService from './services/SessionService'
-import ProductDetail from './components/ProductDetail/ProductDetail'
+import React, { useEffect, useState, useCallback } from 'react';
+// ...existing code...
+import './App.css';
+import Header from './components/Header/Header';
+import BannerHotword from './components/Banner-Hotword/Banner-Hotword';
+import CategorySection from './components/Category-innerMain-Section/CategorySection';
+import AddProductForm, { type SubmitPayload } from './components/Add Product/AddProductForm';
+import EditProductForm from './components/Add Product/EditProductForm';
+import AuthModal from './components/Auth/AuthModal';
+import Cart from './components/Cart/Cart';
+import ProductRating from './components/Product Rating/ProductRating';
+import AdminDashboard from './components/Admin/AdminDashboard';
+import AuthService, { type User } from './services/AuthService';
+import CartService from './services/CartService';
+import SessionService from './services/SessionService';
+import ProductDetail from './components/ProductDetail/ProductDetail';
+import Pagination from './components/Pagination/Pagination';
 
+// =========================
+// Config
+// =========================
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8082');
+const ABS_API = API_BASE.replace(/\/$/, '');
+// Neutral placeholder (only used if DB has no image or image fails)
+const PLACEHOLDER_IMG =
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial" font-size="20">No Image</text></svg>';
+
+// =========================
+// Types
+// =========================
 interface MediaItem {
   id: string | number;
   type: 'image' | 'video';
   url: string;
+  file?: File; // optional when coming from backend
   thumbnail?: string;
   alt?: string;
   displayOrder?: number;
@@ -27,14 +42,103 @@ interface Product {
   id: number;
   name: string;
   description: string;
-  price: number;
-  imageUrl: string;
+  price: number; // THB directly for UI
+  imageUrl: string; // absolute URL (normalized)
   stock: number;
-  category?: string;
-  mediaItems?: MediaItem[]; // Backend media items
+  sold?: number; // จำนวนขาย (optional for compatibility)
+  tags?: { id: number; name: string }[];
+  mediaItems?: MediaItem[];
+
 }
 
+// =========================
+/** Helpers: images & product normalization */
+// =========================
+const pickRawImage = (p: any): string | undefined => {
+  return (
+    p.imageUrl ??
+    p.imageURL ??
+    p.image ??
+    p.image_path ??
+    p.imagePath ??
+    p.thumbnailUrl ??
+    p.thumbnail ??
+    (Array.isArray(p.mediaItems) && p.mediaItems.find((m: any) => m.type === 'image')?.url)
+  );
+};
+
+const toAbsoluteUrl = (u?: string): string => {
+  if (!u) return '';
+  if (/^(https?:|data:|blob:)/i.test(u)) return u; // already absolute/data
+  return `${ABS_API}/${u.replace(/^\/+/, '')}`; // ensure absolute with API base
+};
+
+const normalizeImageUrl = (p: any): string => {
+  const raw = pickRawImage(p);
+  return toAbsoluteUrl(raw);
+};
+
+const mapBackendMedia = (p: any): MediaItem[] | undefined => {
+  const rawList: any[] | undefined = Array.isArray(p.mediaItems)
+    ? p.mediaItems
+    : Array.isArray(p.media)
+    ? p.media
+    : undefined;
+  if (!rawList) return undefined;
+  return rawList.map((m: any, idx: number): MediaItem => ({
+    id: m.id ?? `m-${p.id}-${idx}`,
+    type:
+      m.type === 'image' || m.type === 'video'
+        ? m.type
+        : /(mp4|webm|ogg)$/i.test(String(m.url || m.path || m.src || ''))
+        ? 'video'
+        : 'image',
+    url: toAbsoluteUrl(m.url || m.path || m.src),
+    thumbnail: toAbsoluteUrl(m.thumbnail),
+    alt: m.alt,
+    displayOrder: m.displayOrder ?? idx,
+  }));
+};
+
+const normalizeProduct = (p: any): Product => {
+  const mediaItems = mapBackendMedia(p);
+  // take DB imageUrl (or image...) as primary; do NOT inject demo images
+  let imageUrl = normalizeImageUrl({ ...p, mediaItems });
+  if (!imageUrl) {
+    // if DB provided media list, pick first image; otherwise leave empty
+    const firstImg = mediaItems?.find((m) => m.type === 'image')?.url;
+    imageUrl = toAbsoluteUrl(firstImg) || '';
+  }
+
+  return {
+    id: Number(p.id),
+    name: p.name ?? '',
+    description: p.description ?? '',
+    price: Number(p.price) || 0,
+    imageUrl,
+    stock: Number(p.stock) ?? 0,
+    tags: p.tags,
+    mediaItems,
+  };
+};
+
+const parseProductsPayload = (payload: any): any[] => {
+  // Accept either array or { products: [...] }
+  if (Array.isArray(payload)) return payload;
+  if (payload && Array.isArray(payload.products)) return payload.products;
+  return [];
+};
+
 function App() {
+  // ===== Buy Now Handler =====
+  const handleBuyNow = (productId: number) => {
+    // TODO: Replace with your backend logic or navigation
+    // Example: Add to cart and go to checkout page
+    handleAddToCart(productId, 1);
+    setShowCart(true);
+    // Or navigate to checkout page directly if needed
+    // window.location.href = `/checkout?productId=${productId}`;
+  };
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,29 +151,20 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
-  
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
+
   // 🔐 Authentication states
   const [user, setUser] = useState<User | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  
+
   // 🛒 Cart states
   const [showCart, setShowCart] = useState(false);
 
-  // 🛣️ ตรวจสอบว่าอยู่ในหน้า Admin หรือไม่
+  // 🛣️ Routing helpers
   const isAdminPage = currentPath === '/admin';
-  const isProductDetailPage = currentPath.startsWith('/product/');
-  
-  // 🔍 Get current product ID from URL
-  const getProductIdFromPath = () => {
-    const match = currentPath.match(/\/product\/(\d+)/);
-    return match ? parseInt(match[1]) : null;
-  };
-  
-  const currentProduct = isProductDetailPage 
-    ? products.find(p => p.id === getProductIdFromPath()) 
-    : null;
+  const isProductDetailPage = !!currentProduct;
 
-  // 🔐 Admin Authentication - ใช้ useCallback เพื่อป้องกัน dependency warning
+  // 🔐 Admin guard
   const handleAdminLogin = useCallback(() => {
     if (!isAdminPage) {
       alert('❌ ต้องเข้าหน้า /admin เท่านั้นถึงจะใช้งาน Admin ได้');
@@ -89,7 +184,6 @@ function App() {
     }
   }, [isAdminPage]);
 
-  // 🚪 Admin Logout
   const handleAdminLogout = useCallback(() => {
     setIsAdmin(false);
     setIsEditMode(false);
@@ -98,20 +192,14 @@ function App() {
     setCurrentPath('/');
   }, []);
 
-  // 🎯 ฟังการเปลี่ยนแปลง URL
+  // 🎯 Listen to URL changes (basic router)
   useEffect(() => {
-    const handleLocationChange = () => {
-      setCurrentPath(window.location.pathname);
-    };
-
+    const handleLocationChange = () => setCurrentPath(window.location.pathname);
     window.addEventListener('popstate', handleLocationChange);
-    
-    return () => {
-      window.removeEventListener('popstate', handleLocationChange);
-    };
+    return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
-  // 🔄 Auto Admin mode เมื่ออยู่ในหน้า /admin
+  // Auto admin mode
   useEffect(() => {
     if (isAdminPage && !isAdmin) {
       handleAdminLogin();
@@ -120,31 +208,26 @@ function App() {
     }
   }, [isAdminPage, isAdmin, handleAdminLogin, handleAdminLogout]);
 
-  // ✅ เรียก API เพื่อดึงข้อมูลสินค้า
+  // Initial boot
   useEffect(() => {
     fetchProducts();
-    // Load current user from localStorage
     loadCurrentUser();
-    // เริ่มต้น Auto Keep-Alive สำหรับ Session
-    AuthService.startAutoKeepAliveWithControl();
-    
-    // Cleanup function
+    // ถ้า SessionService ของคุณมี keep-alive พิเศษ คงไว้ได้
+    AuthService.startAutoKeepAliveWithControl?.();
+
     return () => {
-      AuthService.stopAutoKeepAlive();
+      AuthService.stopAutoKeepAlive?.();
       SessionService.stopSessionMonitoring();
     };
   }, []);
 
-  // 🔐 Load current user
+  // 🔐 Load current user & session monitoring
   const loadCurrentUser = async () => {
     try {
       const currentUser = await AuthService.getCurrentUser();
       setUser(currentUser);
-      
-      // Start session monitoring when user is authenticated
       if (currentUser) {
         SessionService.startSessionMonitoring(() => {
-          // Handle session expiration
           setUser(null);
           setCartCount(0);
           alert('⚠️ เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
@@ -152,53 +235,39 @@ function App() {
       } else {
         SessionService.stopSessionMonitoring();
       }
-    } catch (error) {
-      console.error('Error loading user:', error);
+    } catch (err) {
+      console.error('Error loading user:', err);
       SessionService.stopSessionMonitoring();
     }
   };
 
-  // 🔐 Authentication handlers
+  // Auth handlers
   const handleLogin = async (email: string, password: string) => {
     const response = await AuthService.login({ email, password });
-
     if (response.success && response.user) {
       setUser(response.user);
       setShowAuthModal(false);
-
-      // Start session monitoring after successful login
       SessionService.startSessionMonitoring(() => {
         setUser(null);
         setCartCount(0);
         alert('⚠️ เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
       });
-
       alert(`✅ ยินดีต้อนรับ ${response.user.firstName}!`);
     } else {
       throw new Error(response.message || 'การเข้าสู่ระบบล้มเหลว');
     }
   };
 
-  const handleRegister = async (userData: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    phoneNumber?: string;
-  }) => {
+  const handleRegister = async (userData: { email: string; password: string; firstName: string; lastName: string; phoneNumber?: string }) => {
     const response = await AuthService.register(userData);
-
     if (response.success && response.user) {
       setUser(response.user);
       setShowAuthModal(false);
-
-      // Start session monitoring after successful registration
       SessionService.startSessionMonitoring(() => {
         setUser(null);
         setCartCount(0);
         alert('⚠️ เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่อีกครั้ง');
       });
-
       alert(`✅ สมัครสมาชิกสำเร็จ! ยินดีต้อนรับ ${response.user.firstName}!`);
     } else {
       throw new Error(response.message || 'การสมัครสมาชิกล้มเหลว');
@@ -207,29 +276,24 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      // Stop session monitoring before logout
       SessionService.stopSessionMonitoring();
-      
       await AuthService.logout();
       setUser(null);
-      setCartCount(0); // รีเซ็ต cart count เมื่อ logout
-      // The AuthService.logout() will handle the page reload
+      setCartCount(0);
     } catch {
       console.error('Logout error');
-      // Fallback logout
       setUser(null);
       setCartCount(0);
       alert('✅ ออกจากระบบเรียบร้อยแล้ว');
     }
   };
 
-  // 🛒 Cart functions
+  // Cart
   const updateCartCount = async () => {
     try {
-      const count = await CartService.getCartCount();
-      setCartCount(count);
-    } catch (error) {
-      console.error('Error updating cart count:', error);
+      setCartCount(await CartService.getCartCount());
+    } catch (err) {
+      console.error('Error updating cart count:', err);
     }
   };
 
@@ -237,29 +301,27 @@ function App() {
     if (!user) return;
     try {
       await CartService.getCartItems();
-    } catch (error) {
-      console.error('Error loading cart items:', error);
+    } catch (err) {
+      console.error('Error loading cart items:', err);
     }
   }, [user]);
 
-  const handleAddToCart = async (productId: number, quantity: number = 1) => {
+  const handleAddToCart = async (productId: number, quantity = 1) => {
     if (!user) {
       setShowAuthModal(true);
       alert('กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า');
       return;
     }
-
     try {
       await CartService.addToCart(productId, quantity);
       await updateCartCount();
       alert('✅ เพิ่มสินค้าลงตะกร้าเรียบร้อยแล้ว!');
-    } catch (error) {
-      console.error('Error adding product to cart:', error);
+    } catch (err) {
+      console.error('Error adding product to cart:', err);
       alert('❌ ไม่สามารถเพิ่มสินค้าลงตะกร้าได้');
     }
   };
 
-  //  Load cart when user changes
   useEffect(() => {
     if (user) {
       loadCartItems();
@@ -269,79 +331,72 @@ function App() {
     }
   }, [user, loadCartItems]);
 
+  // =========================
+  // Data Fetching (robust JSON parsing, DB images only)
+  // =========================
   const fetchProducts = async () => {
     try {
       setLoading(true);
-  const response = await fetch('http://localhost:8082/api/products');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data: Product[] = await response.json();
-      
-      // Add sample media data to some products for demo
-      const productsWithMedia = data.map((product, index) => {
-        // Add media to every 3rd product for demo
-        if (index % 3 === 0) {
-          return {
-            ...product,
-            media: [
-              {
-                id: `media-${product.id}-1`,
-                type: 'image' as const,
-                url: `https://picsum.photos/600/600?random=${product.id + 100}`,
-                alt: `${product.name} - รูปที่ 2`
-              },
-              {
-                id: `media-${product.id}-2`,
-                type: 'image' as const,
-                url: `https://picsum.photos/600/600?random=${product.id + 200}`,
-                alt: `${product.name} - รูปที่ 3`
-              },
-              {
-                id: `media-${product.id}-3`,
-                type: 'video' as const,
-                url: 'https://sample-videos.com/zip/10/mp4/480/SampleVideo_640x360_1mb.mp4',
-                thumbnail: `https://picsum.photos/600/600?random=${product.id + 300}`,
-                alt: `${product.name} - วีดีโอสาธิต`
-              }
-            ]
-          };
-        }
-        return product;
+      const res = await fetch(`${API_BASE}/api/products`, {
+        headers: { Accept: 'application/json, text/plain, */*' },
+        credentials: 'include', // ✅ แนบคุกกี้ถ้ามี
       });
-      
-      setProducts(productsWithMedia);
-      setFilteredProducts(productsWithMedia);
-      console.log('✅ Products loaded with media:', productsWithMedia);
-    } catch (error) {
-      console.error('❌ Error fetching products:', error);
-  setError('Failed to load products. Make sure backend is running on port 8082.');
+      const raw = await res.text();
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${raw.slice(0, 180)}`);
+      if (/<!doctype html>|<html/i.test(raw)) throw new Error('Server responded with HTML instead of JSON');
+
+      const cleaned = raw
+        .replace(/^[\uFEFF\xEF\xBB\xBF\s]*/, '') // strip BOM/whitespace
+        .replace(/^\)\]\}',?\s*/, '') // angular/json prefix
+        .replace(/,(\s*[\]\}])/g, '$1'); // trailing commas guard
+
+      let parsed: any;
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch (e) {
+        console.error('❌ Invalid JSON from server (raw):', raw);
+        throw new Error('Invalid JSON returned by server');
+      }
+
+      const arr = parseProductsPayload(parsed);
+      const normalized: Product[] = arr.map((p: any) => normalizeProduct(p));
+
+      setProducts(normalized);
+      setFilteredProducts(normalized);
+      setPage(1); // ✅ เริ่มหน้าแรกเมื่อโหลดสินค้า
+      console.log('✅ Products loaded (DB images only):', normalized);
+    } catch (err) {
+      console.error('❌ Error fetching products:', err);
+      setError('Failed to load products. Make sure backend is running on the configured API base.');
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Search functionality
+  // =========================
+  // UI Helpers
+  // =========================
+  const handleCategorySelect = (category: string) => {
+    setPage(1);
+    if (!category) {
+      setFilteredProducts(products);
+      return;
+    }
+    const filtered = products.filter((p) => p.tags?.some((t) => t.name === category));
+    setFilteredProducts(filtered);
+  };
+
   const handleSearch = (query: string) => {
+    setPage(1);
     if (!query.trim()) {
       setFilteredProducts(products);
       return;
     }
-    
-    const filtered = products.filter(product => 
-      product.name.toLowerCase().includes(query.toLowerCase()) ||
-      product.description.toLowerCase().includes(query.toLowerCase())
-    );
-    
+    const q = query.toLowerCase();
+    const filtered = products.filter((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
     setFilteredProducts(filtered);
-    console.log(`🔍 Search "${query}" found ${filtered.length} products`);
   };
 
-
-
-  // ✏️ Toggle Edit Mode - ทำงานเฉพาะใน /admin
   const handleToggleEditMode = () => {
     if (!isAdminPage) {
       alert('❌ ต้องอยู่ในหน้า /admin เท่านั้น');
@@ -351,143 +406,143 @@ function App() {
       handleAdminLogin();
       return;
     }
-    setIsEditMode(!isEditMode);
+    setIsEditMode((s) => !s);
   };
 
-  // ✅ Function สำหรับเพิ่มสินค้าใหม่ - เฉพาะใน /admin
-  const handleAddProduct = async (productData: Omit<Product, 'id'>) => {
-    console.log('🔧 handleAddProduct called!');
-    console.log('Product data:', productData);
-    console.log('isAdminPage:', isAdminPage);
-    console.log('isAdmin:', isAdmin);
-    console.log('user:', user);
-    console.log('Current path:', currentPath);
-    
-    // สำหรับการทดสอบ - ข้ามการตรวจสอบ admin ชั่วคราว
-    // if (!isAdminPage || !isAdmin) {
-    //   console.log('❌ Not admin or not admin page');
-    //   alert('❌ ต้องเป็น Admin ในหน้า /admin เท่านั้นที่สามารถเพิ่มสินค้าได้');
-    //   return;
-    // }
+  // =========================
+  // --- Pagination ---
+  // =========================
+  const PAGE_SIZE = 48;
+  const [page, setPage] = useState(1);
 
-    console.log('✅ Starting API call...');
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+  const pageStart = (page - 1) * PAGE_SIZE;
+  const pageItems = filteredProducts.slice(pageStart, pageStart + PAGE_SIZE);
+
+  // ถ้าจำนวนสินค้าหลังกรองเปลี่ยนจนหน้าเกิน ให้ดึงกลับมาที่หน้าสุดท้าย
+  useEffect(() => {
+    const newTotal = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+    if (page > newTotal) setPage(newTotal);
+  }, [filteredProducts.length]); // ไม่จำเป็นต้องใส่ page เป็น dependency
+
+  // =========================
+  // CRUD: Add / Edit / Delete
+  // =========================
+  const handleAddProduct = async (payload: SubmitPayload) => {
     setIsSubmitting(true);
     try {
-  const response = await fetch('http://localhost:8082/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(productData)
-      });
-
-      console.log('📡 API Response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log('❌ API Error response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const data = new FormData();
+      data.append('name', payload.name.trim());
+      data.append('description', payload.description.trim());
+      data.append('price', String(payload.price));
+      data.append('stock', String(payload.stock));
+      payload.tags.forEach((tag) => data.append('tags[]', tag));
+      if (payload.imageFile) data.append('imageFile', payload.imageFile);
+      if (payload.media?.length) {
+        payload.media.forEach((m, idx) => {
+          if (m.file) data.append('mediaFiles[]', m.file, m.file.name || `media_${idx}`);
+          data.append('mediaTypes[]', m.type);
+          data.append('mediaAlts[]', m.alt || '');
+          data.append('mediaDisplayOrders[]', String(idx));
+        });
       }
 
-      const newProduct = await response.json();
-      console.log('✅ New product created:', newProduct);
-      
-      setProducts(prev => [...prev, newProduct]);
-      setFilteredProducts(prev => [...prev, newProduct]);
+      const res = await fetch(`${API_BASE}/api/products/upload`, {
+        method: 'POST',
+        body: data,
+        credentials: 'include', // ✅ แนบคุกกี้
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        alert('❌ เพิ่มสินค้าไม่สำเร็จ: ' + (text || `HTTP ${res.status}`));
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      const raw = await res.json();
+      const normalizedNew = normalizeProduct(raw);
+      setProducts((prev) => [normalizedNew, ...prev]);
+      setFilteredProducts((prev) => [normalizedNew, ...prev]);
       setShowAddForm(false);
-      
-      alert(`✅ เพิ่มสินค้า "${newProduct.name}" สำเร็จ!`);
-      
-    } catch (error) {
-      console.error('❌ Error adding product:', error);
+      setPage(1); // ✅ หลังเพิ่มของใหม่ กลับไปหน้าแรกให้เห็นของใหม่บนสุด
+      alert(`✅ เพิ่มสินค้า "${normalizedNew.name}" สำเร็จ!`);
+    } catch (err) {
+      console.error('❌ Error adding product:', err);
       alert('❌ เกิดข้อผิดพลาดในการเพิ่มสินค้า กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ✅ Function สำหรับแก้ไขสินค้า - เฉพาะใน /admin (หรือเมื่อสินค้าหมด)
   const handleEditProduct = async (productData: Omit<Product, 'id'>) => {
     if (!isAdminPage || !isAdmin) {
       alert('❌ ต้องเป็น Admin ในหน้า /admin เท่านั้น');
       return;
     }
-
     if (!editingProduct) return;
-    
+
     setIsSubmitting(true);
     try {
-  const response = await fetch(`http://localhost:8082/api/products/${editingProduct.id}`, {
+      // ✅ ส่งเฉพาะฟิลด์ที่แบ็กเอนด์รองรับ (อย่าส่ง imageUrl/mediaItems)
+      const editable = {
+        name: productData.name.trim(),
+        description: productData.description.trim(),
+        price: Number(productData.price),
+        stock: Number(productData.stock),
+        // ถ้าแบ็กเอนด์ต้องการ {id,name}[] ให้ส่งรูปแบบนั้นแทน
+        tags: (productData.tags ?? []).map((t) => t.name),
+      };
+
+      const res = await fetch(`${API_BASE}/api/products/${editingProduct.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(productData)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editable),
+        credentials: 'include', // ✅
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const updatedProduct = await response.json();
-      
-      setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
-      setFilteredProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const raw = await res.json();
+      const updated = normalizeProduct(raw);
+      setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      setFilteredProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       setEditingProduct(null);
-      
-      alert(`✅ แก้ไขสินค้า "${updatedProduct.name}" สำเร็จ!`);
-      
-    } catch (error) {
-      console.error('Error updating product:', error);
+      alert(`✅ แก้ไขสินค้า "${updated.name}" สำเร็จ!`);
+    } catch (err) {
+      console.error('Error updating product:', err);
       alert('❌ เกิดข้อผิดพลาดในการแก้ไขสินค้า กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ✅ Function สำหรับลบสินค้า - เฉพาะใน /admin
   const handleDeleteProduct = async (productId: number, productName: string) => {
     if (!isAdminPage || !isAdmin || !isEditMode) {
       alert('❌ ต้องเป็น Admin ในหน้า /admin และเปิดโหมดแก้ไขเท่านั้น');
       return;
     }
-
-    if (!window.confirm(`คุณแน่ใจหรือไม่ที่จะลบสินค้า "${productName}"?`)) {
-      return;
-    }
+    if (!window.confirm(`คุณแน่ใจหรือไม่ที่จะลบสินค้า "${productName}"?`)) return;
 
     setIsDeleting(productId);
     try {
-  const response = await fetch(`http://localhost:8082/api/products/${productId}`, {
-        method: 'DELETE'
+      const res = await fetch(`${API_BASE}/api/products/${productId}`, {
+        method: 'DELETE',
+        credentials: 'include', // ✅
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      setProducts(prev => prev.filter(p => p.id !== productId));
-      setFilteredProducts(prev => prev.filter(p => p.id !== productId));
-      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setProducts((prev) => prev.filter((p) => p.id !== productId));
+      setFilteredProducts((prev) => prev.filter((p) => p.id !== productId));
       alert(`✅ ลบสินค้า "${productName}" สำเร็จ!`);
-      
-    } catch (error) {
-      console.error('Error deleting product:', error);
+    } catch (err) {
+      console.error('Error deleting product:', err);
       alert('❌ เกิดข้อผิดพลาดในการลบสินค้า กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsDeleting(null);
     }
   };
 
+  // =========================
+  // Render
+  // =========================
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontSize: '18px'
-      }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: 18 }}>
         🔄 Loading products...
       </div>
     );
@@ -495,28 +550,22 @@ function App() {
 
   if (error) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        padding: '20px',
-        textAlign: 'center'
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          padding: 20,
+          textAlign: 'center',
+        }}
+      >
         <h2 style={{ color: '#e74c3c' }}>❌ Error</h2>
         <p>{error}</p>
-        <button 
+        <button
           onClick={fetchProducts}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#3498db',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            marginTop: '10px'
-          }}
+          style={{ padding: '10px 20px', backgroundColor: '#1677ff', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', marginTop: 10 }}
         >
           🔄 Try Again
         </button>
@@ -526,53 +575,38 @@ function App() {
 
   return (
     <div>
-      {/* Check if this is admin page and user is logged in as admin */}
       {isAdminPage && isAdmin && user?.role === 'ADMIN' ? (
         <AdminDashboard />
       ) : (
         <>
-          {/* ✅ Header with Search Bar */}
-          <Header 
-            cartCount={cartCount} 
+          <Header
+            cartCount={cartCount}
             onSearch={handleSearch}
             onAddProduct={() => setShowAddForm(true)}
-            isAdmin={isAdmin && isAdminPage} // แสดงปุ่มเฉพาะใน /admin
+            isAdmin={isAdmin && isAdminPage}
             user={user}
             onLoginClick={() => setShowAuthModal(true)}
             onLogout={handleLogout}
             onCartClick={() => setShowCart(true)}
           />
-          
-          {/* 🔐 Admin Control Panel - แสดงเฉพาะใน /admin */}
-          {isAdminPage && (
-            <div style={{
-              backgroundColor: isAdmin ? (isEditMode ? '#28a745' : '#17a2b8') : '#6c757d',
-              color: 'white',
-              padding: '10px 0',
-              textAlign: 'center',
-              borderBottom: '2px solid rgba(255,255,255,0.2)'
-            }}>
-              <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: '15px'
-                }}>
-                  {/* Status Display */}
-                  <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-                    {!isAdmin ? (
-                      <>🔒 Admin Page - กรุณาเข้าสู่ระบบ</>
-                    ) : isEditMode ? (
-                      <>✏️ Edit Mode - สามารถแก้ไข/ลบสินค้าได้</>
-                    ) : (
-                      <>👤 Admin Mode - พร้อมจัดการสินค้า</>
-                    )}
-                  </div>
 
-                  {/* Admin Controls */}
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {/* Admin Control Bar */}
+          {isAdminPage && (
+            <div
+              style={{
+                backgroundColor: isAdmin ? (isEditMode ? '#28a745' : '#17a2b8') : '#6c757d',
+                color: 'white',
+                padding: '10px 0',
+                textAlign: 'center',
+                borderBottom: '2px solid rgba(255,255,255,0.2)',
+              }}
+            >
+              <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 15 }}>
+                  <div style={{ fontSize: 14, fontWeight: 'bold' }}>
+                    {!isAdmin ? '🔒 Admin Page - กรุณาเข้าสู่ระบบ' : isEditMode ? '✏️ Edit Mode - สามารถแก้ไข/ลบสินค้าได้' : '👤 Admin Mode - พร้อมจัดการสินค้า'}
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     {!isAdmin ? (
                       <button
                         onClick={handleAdminLogin}
@@ -581,334 +615,204 @@ function App() {
                           color: 'white',
                           border: '2px solid rgba(255,255,255,0.3)',
                           padding: '8px 16px',
-                          borderRadius: '20px',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 'bold',
-                      transition: 'all 0.3s'
-                    }}
-                  >
-                    🔐 เข้าสู่ระบบ Admin
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      onClick={handleToggleEditMode}
-                      style={{
-                        backgroundColor: isEditMode ? '#dc3545' : '#28a745',
-                        color: 'white',
-                        border: 'none',
-                        padding: '8px 16px',
-                        borderRadius: '20px',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        fontWeight: 'bold',
-                        transition: 'all 0.3s'
-                      }}
-                    >
-                      {isEditMode ? '🔒 ปิดโหมดแก้ไข' : '✏️ เปิดโหมดแก้ไข'}
-                    </button>
-
-                    <button
-                      onClick={handleAdminLogout}
-                      style={{
-                        backgroundColor: 'rgba(255,255,255,0.2)',
-                        color: 'white',
-                        border: '2px solid rgba(255,255,255,0.3)',
-                        padding: '8px 16px',
-                        borderRadius: '20px',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        fontWeight: 'bold',
-                        transition: 'all 0.3s'
-                      }}
-                    >
-                      🚪 ออกจากระบบ
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      <main style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-        {/* Show Banner and Category only when NOT on product detail page */}
-        {!isProductDetailPage && (
-          <>
-            <BannerHotword />
-            <CategorySection />
-          </>
-        )}
-        
-        <section style={{ padding: isProductDetailPage ? '20px 0' : '40px 0', backgroundColor: isProductDetailPage ? '#fff' : '#f8fafc'}}>
-          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 15px' }}>
-
-            {/* 🛍️ Product Detail Page */}
-            {isProductDetailPage ? (
-              <ProductDetail 
-                product={currentProduct || null}
-                onAddToCart={handleAddToCart}
-                onCartClick={() => setShowCart(true)}
-                loading={loading}
-              />
-            ) : (
-              <>
-                <div style={{
-                  backgroundColor: 'white',
-                  padding: '20px',
-                  borderRadius: '8px',
-                  marginBottom: '20px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  border: '1px solid #e0e0e0'
-                }}>
-                  <h2 style={{ 
-                    margin: '0 0 10px 0', 
-                    color: '#ee4d2d',
-                    textAlign: 'left',
-                    fontSize: '18px',
-                    fontWeight: '500',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px'
-                  }}>
-                    🛍️ สินค้าทั้งหมด
-                    <span style={{
-                      fontSize: '14px',
-                      color: '#666',
-                      fontWeight: 'normal'
-                    }}>
-                      ({filteredProducts.length} รายการ)
-                    </span>
-                  </h2>
-                  
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(188px, 1fr))', 
-                    gap: '15px',
-                    marginTop: '15px'
-                  }}>
-                    {loading ? (
-                      Array.from({ length: 8 }).map((_, index) => (
-                        <div key={index} style={{
-                          backgroundColor: '#f5f5f5',
-                          borderRadius: '2px',
-                          height: '280px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#ccc'
-                        }}>
-                          Loading...
-                        </div>
-                      ))
-                    ) : filteredProducts.length === 0 ? (
-                      <div style={{ 
-                        gridColumn: '1 / -1', 
-                        textAlign: 'center', 
-                        padding: '40px',
-                        color: '#666' 
-                      }}>
-                        ไม่มีสินค้าให้แสดง
-                      </div>
+                          borderRadius: 20,
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        🔐 เข้าสู่ระบบ Admin
+                      </button>
                     ) : (
-                      filteredProducts.map((product) => (
-                        <div 
-                          key={product.id}
-                          onClick={() => {
-                            window.history.pushState({}, '', `/product/${product.id}`);
-                            setCurrentPath(`/product/${product.id}`);
-                          }}
+                      <>
+                        <button
+                          onClick={handleToggleEditMode}
                           style={{
-                            backgroundColor: 'white',
-                            borderRadius: '2px',
-                            overflow: 'hidden',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                            transition: 'all 0.2s ease',
+                            backgroundColor: isEditMode ? '#dc3545' : '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 16px',
+                            borderRadius: 20,
                             cursor: 'pointer',
-                            border: '1px solid #f0f0f0',
-                            position: 'relative'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
+                            fontSize: 13,
+                            fontWeight: 'bold',
                           }}
                         >
-                          {/* Product content */}
-                          <div style={{ position: 'relative', overflow: 'hidden' }}>
-                            <img 
-                              src={product.imageUrl} 
-                              alt={product.name}
-                              style={{
-                                width: '100%',
-                                height: '188px',
-                                objectFit: 'cover',
-                                transition: 'transform 0.3s ease'
-                              }}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTg4IiBoZWlnaHQ9IjE4OCIgdmlld0JveD0iMCAwIDE4OCAxODgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODgiIGhlaWdodD0iMTg4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik05NCA3NEw5NCA5NCIgc3Ryb2tlPSIjOUI5QjlCIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8cGF0aCBkPSJNODQgODRMOTQgOTRMMTA0IDg0IiBzdHJva2U9IiM5QjlCOUIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxyZWN0IHg9IjY2IiB5PSIxMDQiIHdpZHRoPSI1NiIgaGVpZ2h0PSIzNiIgcng9IjQiIHN0cm9rZT0iIzlCOUI5QiIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+';
-                              }}
-                            />
-                            
-                            {product.stock === 0 && (
-                              <div style={{
-                                position: 'absolute',
-                                top: '0',
-                                left: '0',
-                                right: '0',
-                                bottom: '0',
-                                backgroundColor: 'rgba(0,0,0,0.7)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white',
-                                fontSize: '14px',
-                                fontWeight: 'bold'
-                              }}>
-                                สินค้าหมด
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div style={{ padding: '12px' }}>
-                            <h3 style={{
-                              margin: '0 0 8px 0',
-                              fontSize: '14px',
-                              fontWeight: '400',
-                              color: '#333',
-                              lineHeight: '1.2',
-                              overflow: 'hidden',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical'
-                            }}>
-                              {product.name}
-                            </h3>
-                            
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              margin: '8px 0'
-                            }}>
-                              <span style={{
-                                color: '#ee4d2d',
-                                fontSize: '16px',
-                                fontWeight: 'bold'
-                              }}>
-                                ฿{(product.price * 35).toLocaleString()}
-                              </span>
-                              {isAdmin && isEditMode && (
-                                <div style={{ display: 'flex', gap: '5px' }}>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditingProduct(product);
-                                    }}
-                                    style={{
-                                      backgroundColor: '#ffc107',
-                                      color: 'white',
-                                      border: 'none',
-                                      borderRadius: '3px',
-                                      padding: '4px 8px',
-                                      fontSize: '12px',
-                                      cursor: 'pointer'
-                                    }}
-                                  >
-                                    แก้ไข
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteProduct(product.id, product.name);
-                                    }}
-                                    disabled={isDeleting === product.id}
-                                    style={{
-                                      backgroundColor: isDeleting === product.id ? '#ccc' : '#dc3545',
-                                      color: 'white',
-                                      border: 'none',
-                                      borderRadius: '3px',
-                                      padding: '4px 8px',
-                                      fontSize: '12px',
-                                      cursor: isDeleting === product.id ? 'not-allowed' : 'pointer'
-                                    }}
-                                  >
-                                    {isDeleting === product.id ? 'ลบ...' : 'ลบ'}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              fontSize: '12px'
-                            }}>
-                              <ProductRating 
-                                productId={product.id} 
-                                size="small" 
-                                showCount={true}
-                                showText={false}
-                              />
-                              <span style={{ color: '#666' }}>จำนวน: {product.stock}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))
+                          {isEditMode ? '🔒 ปิดโหมดแก้ไข' : '✏️ เปิดโหมดแก้ไข'}
+                        </button>
+                        <button
+                          onClick={handleAdminLogout}
+                          style={{
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            color: 'white',
+                            border: '2px solid rgba(255,255,255,0.3)',
+                            padding: '8px 16px',
+                            borderRadius: 20,
+                            cursor: 'pointer',
+                            fontSize: 13,
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          🚪 ออกจากระบบ
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          <main style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+            {!isProductDetailPage && (
+              <>
+                <BannerHotword />
+                <CategorySection onCategorySelect={handleCategorySelect} />
               </>
             )}
 
-            {/* 🛍️ Add Product Form */}
-            {showAddForm && isAdmin && (
-              <AddProductForm 
-                onSubmit={handleAddProduct}
-                onCancel={() => setShowAddForm(false)}
-                isLoading={isSubmitting}
-              />
-            )}
+            <section style={{ padding: isProductDetailPage ? '20px 0' : '40px 0', backgroundColor: isProductDetailPage ? '#fff' : '#f8fafc' }}>
+              <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 15px' }}>
+                {isProductDetailPage ? (
+                  <ProductDetail product={currentProduct || null} onAddToCart={handleAddToCart} onCartClick={() => setShowCart(true)} loading={loading} />
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        backgroundColor: 'white',
+                        padding: 20,
+                        borderRadius: 8,
+                        marginBottom: 20,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                        border: '1px solid #e0e0e0',
+                      }}
+                    >
+                      <h2
+                        style={{
+                          margin: '0 0 10px 0',
+                          color: '#ee4d2d',
+                          textAlign: 'left',
+                          fontSize: 18,
+                          fontWeight: 500,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                        }}
+                      >
+                        🛍️ สินค้าทั้งหมด
+                        <span style={{ fontSize: 14, color: '#666', fontWeight: 'normal' }}>({filteredProducts.length} รายการ)</span>
+                      </h2>
 
-            {/* ✏️ Edit Product Form */}
-            {editingProduct && isAdmin && (
-              <EditProductForm 
-                product={editingProduct}
-                onSubmit={handleEditProduct}
-                onCancel={() => setEditingProduct(null)}
-              />
-            )}
-          </div>
-        </section>
-        </main>
+                      {/* ===== Product Grid (pageItems) ===== */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(188px, 1fr))', gap: 15, marginTop: 15 }}>
+                        {pageItems.length === 0 ? (
+                          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 40, color: '#666' }}>ไม่มีสินค้าให้แสดง</div>
+                        ) : (
+                          pageItems.map((product) => (
+                            <div
+                              key={product.id}
+                              style={{
+                                background: '#fff',
+                                borderRadius: 8,
+                                boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+                                border: '1px solid #ececec',
+                                padding: 12,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                cursor: 'pointer',
+                                transition: 'box-shadow 0.18s',
+                                position: 'relative',
+                                minHeight: 340,
+                              }}
+                              onClick={() => {
+                                setCurrentProduct(product);
+                                window.history.pushState({}, '', `/product/${product.id}`);
+                                setCurrentPath(`/product/${product.id}`);
+                              }}
+                            >
+                              <img
+                                src={product.imageUrl || PLACEHOLDER_IMG}
+                                alt={product.name}
+                                style={{
+                                  width: 160,
+                                  height: 160,
+                                  objectFit: 'cover',
+                                  borderRadius: 6,
+                                  background: '#f3f4f6',
+                                  marginBottom: 12,
+                                  border: '1px solid #eee',
+                                }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = PLACEHOLDER_IMG;
+                                }}
+                              />
+                              <div style={{ fontWeight: 500, fontSize: 15, color: '#222', marginBottom: 4, textAlign: 'center', minHeight: 38, maxHeight: 38, overflow: 'hidden' }}>
+                                {product.name}
+                              </div>
+                              {/* Rating and sold */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                <ProductRating productId={product.id} size="small" showCount />
+                                <span style={{ color: '#888', fontSize: 13 }}>
+                                  {product.sold !== undefined ? `${product.sold} ขายแล้ว` : ''}
+                                </span>
+                              </div>
+                              <div style={{ color: '#ee4d2d', fontWeight: 700, fontSize: 17, marginBottom: 8 }}>
+                                ฿{product.price.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                              </div>
+                              {isAdmin && isAdminPage && isEditMode && (
+                                <button
+                                  style={{
+                                    position: 'absolute',
+                                    top: 10,
+                                    right: 10,
+                                    background: '#ffc107',
+                                    color: '#222',
+                                    border: 'none',
+                                    borderRadius: 16,
+                                    padding: '2px 10px',
+                                    fontSize: 12,
+                                    cursor: 'pointer',
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingProduct(product);
+                                  }}
+                                >
+                                  แก้ไข
+                                </button>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
 
-        {/* 🔐 Authentication Modal */}
-        {showAuthModal && (
-          <AuthModal
-            isOpen={showAuthModal}
-            onClose={() => setShowAuthModal(false)}
-            onLogin={handleLogin}
-            onRegister={handleRegister}
-          />
-        )}
+                      {/* ใต้กริดสินค้า */}
+                      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                        <Pagination
+                          currentPage={page}
+                          totalPages={totalPages}
+                          onPageChange={setPage}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
-        {/* 🛒 Cart */}
-        {showCart && (
-          <Cart
-            isOpen={showCart}
-            onClose={() => setShowCart(false)}
-          />
-        )}
+                {showAddForm && isAdmin && <AddProductForm onSubmit={handleAddProduct} onCancel={() => setShowAddForm(false)} isLoading={isSubmitting} />}
+
+                {editingProduct && isAdmin && <EditProductForm product={editingProduct} onSubmit={handleEditProduct} onCancel={() => setEditingProduct(null)} />}
+              </div>
+            </section>
+          </main>
+
+          {showAuthModal && <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onLogin={handleLogin} onRegister={handleRegister} />}
+
+          {showCart && <Cart isOpen={showCart} onClose={() => setShowCart(false)} />}
         </>
       )}
-      </div>
-    );
-  }
+    </div>
+  );
+}
 
-export default App
+export default App;

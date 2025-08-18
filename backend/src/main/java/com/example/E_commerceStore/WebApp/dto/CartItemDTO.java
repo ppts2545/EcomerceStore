@@ -7,7 +7,7 @@ public class CartItemDTO {
     private Long id;
     private Long productId;
     private String productName;
-    private String productImage;
+    private String productImageUrl;
     private BigDecimal price;
     private Integer quantity;
     private Integer stock;
@@ -19,7 +19,12 @@ public class CartItemDTO {
         this.id = cartItem.getId();
         this.productId = cartItem.getProduct().getId();
         this.productName = cartItem.getProduct().getName();
-        this.productImage = cartItem.getProduct().getImageUrl();
+        // Use first MediaItem's URL if available
+        if (cartItem.getProduct().getMediaItems() != null && !cartItem.getProduct().getMediaItems().isEmpty()) {
+            this.productImageUrl = cartItem.getProduct().getMediaItems().get(0).getUrl();
+        } else {
+            this.productImageUrl = null; // or a placeholder
+        }
         this.price = cartItem.getPriceAtTime();
         this.quantity = cartItem.getQuantity();
         this.stock = cartItem.getProduct().getStock();
@@ -40,8 +45,8 @@ public class CartItemDTO {
     public String getProductName() { return productName; }
     public void setProductName(String productName) { this.productName = productName; }
 
-    public String getProductImage() { return productImage; }
-    public void setProductImage(String productImage) { this.productImage = productImage; }
+    public String getProductImageUrl() { return productImageUrl; }
+    public void setProductImageUrl(String productImageUrl) { this.productImageUrl = productImageUrl; }
 
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }

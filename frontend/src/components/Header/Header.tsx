@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Header.css';
+
+import { getMyStores } from '../../services/StoreService';
+import type { Store } from '../../services/StoreService';
 
 interface User {
   id: number;
@@ -33,230 +36,182 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [myStores, setMyStores] = useState<Store[]>([]);
   const navigate = useNavigate();
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) getMyStores().then(setMyStores);
+    else setMyStores([]);
+  }, [user]);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(searchQuery);
+    onSearch(searchQuery.trim());
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    onSearch(query);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const q = e.target.value;
+    setSearchQuery(q);
+    onSearch(q);
   };
 
   return (
-    <header className="modern-header">
-      {/* 📢 Announcement Bar */}
-      <div className="announcement-bar">
-        <div className="container">
-          <div className="announcement-content">
-            <span>
-              🎉 ฟรีค่าจัดส่ง เมื่อซื้อครบ ฿299
-            </span>
-            <span>
-              ⚡ Flash Sale ลดสูงสุด 90%
-            </span>
-            <span>
-              🛡️ รับประกันสินค้าแท้ 100%
-            </span>
+    <header className="shopease-header">
+      {/* Utility bar */}
+      <div className="utility-bar">
+        <div className="container utility-inner">
+          <nav className="utility-left" aria-label="secondary">
+            <button className="u-link" onClick={() => navigate('/seller-center')}>Seller Centre</button>
+            <span className="u-sep">|</span>
+            <button className="u-link" onClick={() => navigate('/create-store')}>เปิดร้านค้า</button>
+            <span className="u-sep">|</span>
+            <button className="u-link" onClick={() => navigate('/download')}>ดาวน์โหลด</button>
+            <span className="u-sep">|</span>
+            <span className="u-muted">ติดตามเรา</span>
+            <a className="u-icon" href="#" aria-label="Facebook">📘</a>
+            <a className="u-icon" href="#" aria-label="Instagram">📸</a>
+            <a className="u-icon" href="#" aria-label="YouTube">▶️</a>
+          </nav>
+
+          <div className="utility-right">
+            <button className="u-link" onClick={() => navigate('/notifications')}>
+              🔔 การแจ้งเตือน
+            </button>
+            <span className="u-sep">|</span>
+            <button className="u-link" onClick={() => navigate('/help')}>
+              ❓ ช่วยเหลือ
+            </button>
+            <span className="u-sep">|</span>
+            <button className="u-link" aria-label="Language">🌐 ไทย</button>
+            <span className="u-sep">|</span>
+
+            {/* Auth */}
+            {user ? (
+              <div className="user-chip" onClick={() => setShowUserMenu(!showUserMenu)}>
+                <span className="chip-avatar">{user.firstName.charAt(0).toUpperCase()}</span>
+                <span className="chip-name">{user.firstName}</span>
+                <span className="chip-arrow">▾</span>
+              </div>
+            ) : (
+              <button className="u-link" onClick={onLoginClick}>🔐 เข้าสู่ระบบ</button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* 🏪 Main Header */}
-      <div className="main-header">
-        <div className="container">
-          <div className="header-content">
-            {/* 🏷️ Logo Section */}
-            <div className="logo-section">
-              <h1 className="logo-text">
-                <span className="logo-main">ShopEase</span>
-                <span className="logo-sub">Premium Store</span>
-              </h1>
+      {/* Main row: brand + search + cart */}
+      <div className="main-bar">
+        <div className="container main-inner">
+          <div className="brand" onClick={() => navigate('/')}>
+            <div className="brand-badge">S</div>
+            <div className="brand-text">
+              <div className="brand-title">ShopEase</div>
+              <div className="brand-sub">Premium Store</div>
             </div>
+          </div>
 
-            {/* 🔍 Search Section */}
-            <div className="search-section">
-              <form onSubmit={handleSearchSubmit} className="search-form">
-                <div className="search-input-group">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    placeholder="ค้นหาสินค้า เช่น iPhone, เสื้อผ้า, กระเป๋า..."
-                    className="search-input"
-                    autoComplete="off"
-                  />
-                  <button type="submit" className="search-button">
-                    🔍
-                  </button>
-                </div>
-              </form>
+          <div className="search-wrap">
+            <form className="search-form" onSubmit={handleSubmit} role="search" aria-label="ค้นหาสินค้า">
+              <input
+                className="search-field"
+                type="text"
+                value={searchQuery}
+                onChange={handleChange}
+                placeholder="ค้นหาสินค้าและร้านค้า"
+                autoComplete="off"
+              />
+              <button type="submit" className="search-btn" aria-label="ค้นหา">🔎</button>
+            </form>
 
-              {/* 🔥 Popular Search Tags */}
-              <div className="popular-searches">
-                <span className="popular-label">ยอดนิยม:</span>
-                {['iPhone 15', 'Nike', 'Samsung', 'Adidas', 'MacBook'].map((tag, index) => (
-                  <button
-                    key={index}
-                    className="popular-tag"
-                    onClick={() => {
-                      setSearchQuery(tag);
-                      onSearch(tag);
-                    }}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 👤 User Section */}
-            <div className="user-section">
-              {/* 🛒 Cart Button */}
-              <button className="cart-button" onClick={onCartClick}>
-                <span className="cart-icon">🛒</span>
-                <span className="cart-text">ตะกร้า</span>
-                {cartCount > 0 && (
-                  <span className="cart-badge">{cartCount}</span>
-                )}
-              </button>
-
-              {/* 👤 User Menu */}
-              <div className="user-menu-container">
-                {user ? (
-                  <div className="user-dropdown">
-                    <button 
-                      className="user-button"
-                      onClick={() => setShowUserMenu(!showUserMenu)}
-                    >
-                      <span className="user-avatar">
-                        {user.firstName.charAt(0).toUpperCase()}
-                      </span>
-                      <span className="user-name">{user.firstName}</span>
-                      <span className="dropdown-arrow">▼</span>
-                    </button>
-
-                    {showUserMenu && (
-                      <div className="user-dropdown-menu">
-                        <div className="dropdown-header">
-                          <div className="user-info">
-                            <div className="user-avatar-large">
-                              {user.firstName.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="user-full-name">
-                                {user.firstName} {user.lastName}
-                              </div>
-                              <div className="user-email">{user.email}</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="dropdown-divider"></div>
-
-                        <div className="dropdown-menu-items">
-                          <button 
-                            className="dropdown-item"
-                            onClick={() => window.location.href = '/profile'}
-                          >
-                            <span className="item-icon">👤</span>
-                            โปรไฟล์ของฉัน
-                          </button>
-                          <button 
-                            className="dropdown-item"
-                            onClick={() => window.location.href = '/wallet'}
-                          >
-                            <span className="item-icon">💰</span>
-                            กระเป๋าเงิน
-                          </button>
-                          <button 
-                            className="dropdown-item"
-                            onClick={() => window.location.href = '/payment-history'}
-                          >
-                            <span className="item-icon">📊</span>
-                            ประวัติการชำระเงิน
-                          </button>
-                          <button className="dropdown-item" onClick={() => navigate('/orders/history')}>
-                            <span className="item-icon">📦</span>
-                            คำสั่งซื้อของฉัน
-                          </button>
-                          <button className="dropdown-item">
-                            <span className="item-icon">❤️</span>
-                            รายการโปรด
-                          </button>
-                          <button className="dropdown-item">
-                            <span className="item-icon">🎟️</span>
-                            คูปองของฉัน
-                          </button>
-                          
-                          {/* Admin Section */}
-                          {isAdmin && (
-                            <>
-                              <div className="dropdown-divider"></div>
-                              <button 
-                                className="dropdown-item admin-item"
-                                onClick={() => window.location.href = '/admin-finance'}
-                              >
-                                <span className="item-icon">📈</span>
-                                แดชบอร์ดการเงิน
-                              </button>
-                              <button 
-                                className="dropdown-item admin-item"
-                                onClick={() => window.location.href = '/admin'}
-                              >
-                                <span className="item-icon">⚙️</span>
-                                จัดการระบบ
-                              </button>
-                            </>
-                          )}
-                          
-                          <div className="dropdown-divider"></div>
-                          
-                          <button 
-                            className="dropdown-item logout-item"
-                            onClick={() => {
-                              setShowUserMenu(false);
-                              onLogout();
-                            }}
-                          >
-                            <span className="item-icon">🚪</span>
-                            ออกจากระบบ
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="auth-buttons">
-                    <button className="login-button" onClick={onLoginClick}>
-                      <span className="auth-icon">🔐</span>
-                      เข้าสู่ระบบ
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* 🛠️ Admin Controls */}
-              {isAdmin && (
-                <button className="admin-button" onClick={onAddProduct}>
-                  <span className="admin-icon">➕</span>
-                  <span className="admin-text">เพิ่มสินค้า</span>
+            <div className="hot-queries" aria-label="คำค้นยอดนิยม">
+              {['Gravity Move', 'เคสทนร้อน', 'Huawei Watch Fit 4', 'เคส Yokohama', 'สายชาร์จ', 'LEGO Shark', 'แหก', 'iPhone'].map((tag) => (
+                <button
+                  key={tag}
+                  className="hot-link"
+                  onClick={() => {
+                    setSearchQuery(tag);
+                    onSearch(tag);
+                  }}
+                >
+                  {tag}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="actions">
+            {isAdmin && (
+              <button className="admin-add" onClick={onAddProduct} title="เพิ่มสินค้า">
+                ➕
+              </button>
+            )}
+
+            <button className="cart-pill" onClick={onCartClick} aria-label="ตะกร้าสินค้า">
+              🛒
+              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* User dropdown */}
+      {user && showUserMenu && (
+        <>
+          <div className="user-menu">
+            <div className="menu-header">
+              <div className="menu-avatar">{user.firstName.charAt(0).toUpperCase()}</div>
+              <div className="menu-meta">
+                <div className="menu-name">{user.firstName} {user.lastName}</div>
+                <div className="menu-email">{user.email}</div>
+              </div>
+            </div>
+
+            <div className="menu-group">
+              {myStores.length === 1 && (
+                <button className="menu-item" onClick={() => navigate(`/store/${myStores[0].id}`)}>🏪 หน้าร้านของฉัน</button>
+              )}
+              {myStores.length > 1 && (
+                <>
+                  <div className="menu-label">ร้านค้าของฉัน</div>
+                  {myStores.map((s) => (
+                    <button key={s.id} className="menu-item" onClick={() => navigate(`/store/${s.id}`)}>🏪 {s.name}</button>
+                  ))}
+                </>
               )}
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Click outside handler for user menu */}
-      {showUserMenu && (
-        <div 
-          className="dropdown-backdrop"
-          onClick={() => setShowUserMenu(false)}
-        />
+            <div className="menu-group">
+              <button className="menu-item" onClick={() => navigate('/profile')}>👤 โปรไฟล์ของฉัน</button>
+              <button className="menu-item" onClick={() => navigate('/wallet')}>💰 กระเป๋าเงิน</button>
+              <button className="menu-item" onClick={() => navigate('/payment-history')}>📊 ประวัติการชำระเงิน</button>
+              <button className="menu-item" onClick={() => navigate('/orders/history')}>📦 คำสั่งซื้อของฉัน</button>
+              <button className="menu-item">❤️ รายการโปรด</button>
+              <button className="menu-item">🎟️ คูปองของฉัน</button>
+            </div>
+
+            {isAdmin && (
+              <div className="menu-group">
+                <div className="menu-label">สำหรับผู้ดูแล</div>
+                <button className="menu-item" onClick={() => navigate('/admin-finance')}>📈 แดชบอร์ดการเงิน</button>
+                <button className="menu-item" onClick={() => navigate('/admin')}>⚙️ จัดการระบบ</button>
+              </div>
+            )}
+
+            <div className="menu-group">
+              <button
+                className="menu-item danger"
+                onClick={() => {
+                  setShowUserMenu(false);
+                  onLogout();
+                }}
+              >
+                🚪 ออกจากระบบ
+              </button>
+            </div>
+          </div>
+
+          <div className="menu-backdrop" onClick={() => setShowUserMenu(false)} />
+        </>
       )}
     </header>
   );

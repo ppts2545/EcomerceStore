@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ProductComments from '../ProductComments/ProductComments';
+import ProductReviewList from '../Product/ProductReviewList';
+import ProductReviewForm from '../Product/ProductReviewForm';
 import './ProductDetail.css';
 
 interface MediaItem {
@@ -222,8 +224,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                   {item.type === 'video' ? (
                     <div className="video-thumbnail">
                       <img
-                        src={item.thumbnail || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+Cjxwb2x5Z29uIHBvaW50cz0iMjgsNjAgNTIsNDAgMjgsMjAiIGZpbGw9IiM5QjlCOUIiLz4KPC9zdmc+'}
+                        src={item.thumbnail || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNGM0Y0RjYiLz4KPHBvbHlnb24gcG9pbnRzPSIyOCw2MCA1Miw0MCAyOCwyMCIgZmlsbD0iIjlCOUI5QiIvPgo8L3N2Zz4='}
                         alt="Video thumbnail"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/80x80.png?text=No+Image';
+                        }}
                       />
                       <div className="play-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -236,8 +241,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                       src={item.url}
                       alt={item.alt || `Thumbnail ${index + 1}`}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = 
-                          'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxjaXJjbGUgY3g9IjQwIiBjeT0iNDAiIHI9IjE1IiBmaWxsPSIjOUI5QjlCIi8+CjxwYXRoIGQ9Ik0yNSA1MEw0MCA0MEw1NSA1MEw0MCA2MEwyNSA1MFoiIGZpbGw9IiM5QjlCOUIiLz4KPC9zdmc+';
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/80x80.png?text=No+Image';
                       }}
                     />
                   )}
@@ -285,7 +289,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
                 onClick={() => handleQuantityChange(-1)}
                 disabled={quantity <= 1}
               >
-                -
+                
               </button>
               <span className="quantity-display">{quantity}</span>
               <button 
@@ -327,6 +331,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({
             productId={product.id}
             isLoggedIn={isLoggedIn}
           />
+          <div style={{marginTop: 32}}>
+            <ProductReviewList productId={product.id} />
+            {isLoggedIn && (
+              <ProductReviewForm productId={product.id} userId={1} />
+            )}
+          </div>
         </div>
       )}
     </div>

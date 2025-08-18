@@ -203,6 +203,9 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
                       <img 
                         src={item.productImage || '/placeholder-product.jpg'} 
                         alt={item.productName}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/120x120?text=No+Image';
+                        }}
                       />
                       {item.stock === 0 && (
                         <div className="out-of-stock-overlay">หมด</div>

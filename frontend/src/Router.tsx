@@ -4,6 +4,8 @@ import App from './App';
 import AuthSuccess from './components/Auth/AuthSuccess';
 import AuthError from './components/Auth/AuthError';
 import Payment from './components/Payment/Payment';
+import StorePage from './pages/StorePage';
+import CreateStorePage from './pages/CreateStorePage';
 import StripePaymentSuccess from './components/Payment/StripePaymentSuccess';
 import StripePaymentCancel from './components/Payment/StripePaymentCancel';
 import PaymentSuccessPage from './components/Payment/PaymentSuccessPage';
@@ -34,6 +36,8 @@ const Router: React.FC = () => {
       <Route path="/payment-success" element={<PaymentSuccessPage />} />
       <Route path="/order-success/:orderNumber" element={<OrderSuccess />} />
       <Route path="/profile" element={<UserProfileNew />} />
+  <Route path="/store/:storeId" element={<StorePage />} />
+  <Route path="/create-store" element={<CreateStorePage />} />
       {/* New payment system routes */}
       <Route path="/payment-flow" element={<CheckoutPage />} />
       <Route path="/payment-history" element={<PaymentHistoryPage />} />

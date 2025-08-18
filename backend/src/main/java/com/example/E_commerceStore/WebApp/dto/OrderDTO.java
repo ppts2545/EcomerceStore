@@ -52,7 +52,12 @@ public class OrderDTO {
         public ProductDTO(Product p) {
             this.id = p.getId();
             this.name = p.getName();
-            this.imageUrl = p.getImageUrl();
+            // Use first MediaItem's URL if available
+            if (p.getMediaItems() != null && !p.getMediaItems().isEmpty()) {
+                this.imageUrl = p.getMediaItems().get(0).getUrl();
+            } else {
+                this.imageUrl = null; // or a placeholder
+            }
             this.description = p.getDescription();
         }
     }
