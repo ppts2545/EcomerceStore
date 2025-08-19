@@ -1,27 +1,56 @@
 package com.example.E_commerceStore.WebApp.service;
 
-import com.example.E_commerceStore.WebApp.model.Product;
 import com.example.E_commerceStore.WebApp.model.MediaItem;
-import com.example.E_commerceStore.WebApp.repository.ProductRepository;
-import com.example.E_commerceStore.WebApp.repository.TagRepository;
+import com.example.E_commerceStore.WebApp.model.Product;
+import com.example.E_commerceStore.WebApp.model.Store;
 import com.example.E_commerceStore.WebApp.model.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.E_commerceStore.WebApp.repository.CartItemRepository;
+import com.example.E_commerceStore.WebApp.repository.CommentRepository;
+import com.example.E_commerceStore.WebApp.repository.MediaItemRepository;
+import com.example.E_commerceStore.WebApp.repository.OrderItemRepository;
+import com.example.E_commerceStore.WebApp.repository.ProductRepository;
+import com.example.E_commerceStore.WebApp.repository.ProductReviewRepository;
+import com.example.E_commerceStore.WebApp.repository.TagRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Set;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class ProductService {
-    // ...existing code...
 
-    // เพิ่มสินค้าใหม่พร้อมอัปโหลดไฟล์รูปภาพหลักและ media หลายไฟล์
+    private final ProductRepository productRepository;
+    private final TagRepository tagRepository;
+    private final CartItemRepository cartItemRepository;
+    private final ProductReviewRepository productReviewRepository;
+    private final MediaItemRepository mediaItemRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final CommentRepository commentRepository;
+
+    public ProductService(ProductRepository productRepository,
+                          TagRepository tagRepository,
+                          CartItemRepository cartItemRepository,
+                          ProductReviewRepository productReviewRepository,
+                          MediaItemRepository mediaItemRepository,
+                          OrderItemRepository orderItemRepository,
+                          CommentRepository commentRepository) {
+        this.productRepository = productRepository;
+        this.tagRepository = tagRepository;
+        this.cartItemRepository = cartItemRepository;
+        this.productReviewRepository = productReviewRepository;
+        this.mediaItemRepository = mediaItemRepository;
+        this.orderItemRepository = orderItemRepository;
+        this.commentRepository = commentRepository;
+    }
+
+    // =========================
+    // Create: with main image + optional medias
+    // =========================
     public Product saveProductWithImagesAndMedia(
             String name,
             String description,
@@ -34,36 +63,27 @@ public class ProductService {
             List<String> mediaAlts,
             List<String> mediaDisplayOrders
     ) throws Exception {
-        String uploadDir = "uploads/";
+
+        final String uploadDir = "uploads/";
         Files.createDirectories(Paths.get(uploadDir));
 
+        // Build Product
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
         product.setPrice(price);
         product.setStock(stock);
 
-        // set tags จาก tagNames (ถ้ามี)
+        // Tags
         if (tagNames != null && !tagNames.isEmpty()) {
-            Set<Tag> productTags = new java.util.HashSet<>();
-            for (String tagName : tagNames) {
-                Tag tag = tagRepository.findByName(tagName).orElse(null);
-                if (tag == null) {
-                    tag = new Tag(tagName);
-                    tag = tagRepository.save(tag);
-                }
-                productTags.add(tag);
-            }
-            product.setTags(productTags);
+            product.setTags(resolveTags(tagNames));
         }
 
-        List<MediaItem> mediaItemList = new java.util.ArrayList<>();
+        List<MediaItem> mediaItemList = new ArrayList<>();
 
-        // Main image (imageFile)
+        // Main image
         if (imageFile != null && !imageFile.isEmpty()) {
-            String originalFilename = imageFile.getOriginalFilename();
-            String ext = originalFilename != null && originalFilename.contains(".") ? originalFilename.substring(originalFilename.lastIndexOf('.')) : "";
-            String filename = UUID.randomUUID().toString() + ext;
+            String filename = randomizeFilename(imageFile.getOriginalFilename());
             Path filePath = Paths.get(uploadDir, filename);
             Files.copy(imageFile.getInputStream(), filePath);
 
@@ -75,58 +95,61 @@ public class ProductService {
             mediaItemList.add(mainMedia);
         }
 
-        // Additional media files
-        if (mediaFiles != null && mediaFiles.size() > 0) {
+        // Additional medias
+        if (mediaFiles != null && !mediaFiles.isEmpty()) {
             for (int i = 0; i < mediaFiles.size(); i++) {
-                MultipartFile file = mediaFiles.get(i);
-                if (file == null || file.isEmpty()) continue;
-                String originalFilename = file.getOriginalFilename();
-                String ext = originalFilename != null && originalFilename.contains(".") ? originalFilename.substring(originalFilename.lastIndexOf('.')) : "";
-                String filename = UUID.randomUUID().toString() + ext;
+                MultipartFile f = mediaFiles.get(i);
+                if (f == null || f.isEmpty()) continue;
+
+                String filename = randomizeFilename(f.getOriginalFilename());
                 Path filePath = Paths.get(uploadDir, filename);
-                Files.copy(file.getInputStream(), filePath);
+                Files.copy(f.getInputStream(), filePath);
 
                 MediaItem media = new MediaItem();
-                // type, alt, displayOrder จาก meta
                 String type = (mediaTypes != null && i < mediaTypes.size()) ? mediaTypes.get(i) : "image";
                 String alt = (mediaAlts != null && i < mediaAlts.size()) ? mediaAlts.get(i) : null;
-                int displayOrder = 1 + i; // 0 = main image
+                int displayOrder = 1 + i;
                 if (mediaDisplayOrders != null && i < mediaDisplayOrders.size()) {
-                    try { displayOrder = Integer.parseInt(mediaDisplayOrders.get(i)); } catch (Exception ignore) {}
+                    try {
+                        displayOrder = Integer.parseInt(mediaDisplayOrders.get(i));
+                    } catch (Exception ignore) {}
                 }
+
                 media.setType(type);
                 media.setAlt(alt);
                 media.setDisplayOrder(displayOrder);
                 media.setUrl("/uploads/" + filename);
                 media.setProduct(product);
+
                 mediaItemList.add(media);
             }
         }
 
         product.setMediaItems(mediaItemList);
+
+        // NOTE: ต้องแน่ใจว่า mapping ระหว่าง Product <-> MediaItem เป็น Cascade.PERSIST/MERGE ใน entity
         return productRepository.save(product);
     }
 
-
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private TagRepository tagRepository;
-
-    // เพิ่มสินค้าใหม่พร้อมอัปโหลดไฟล์รูปภาพ
-    public Product saveProductWithImage(String name, String description, BigDecimal price, Integer stock, List<String> tagNames, MultipartFile imageFile) throws Exception {
+    // =========================
+    // Create: simple with one main image
+    // =========================
+    public Product saveProductWithImage(String name,
+                                        String description,
+                                        BigDecimal price,
+                                        Integer stock,
+                                        List<String> tagNames,
+                                        MultipartFile imageFile) throws Exception {
         if (imageFile == null || imageFile.isEmpty()) {
             throw new IllegalArgumentException("Image file is required");
         }
-        String uploadDir = "uploads/";
+
+        final String uploadDir = "uploads/";
         Files.createDirectories(Paths.get(uploadDir));
-        String originalFilename = imageFile.getOriginalFilename();
-        String ext = originalFilename != null && originalFilename.contains(".") ? originalFilename.substring(originalFilename.lastIndexOf('.')) : "";
-        String filename = UUID.randomUUID().toString() + ext;
+
+        String filename = randomizeFilename(imageFile.getOriginalFilename());
         Path filePath = Paths.get(uploadDir, filename);
         Files.copy(imageFile.getInputStream(), filePath);
-
 
         Product product = new Product();
         product.setName(name);
@@ -134,18 +157,8 @@ public class ProductService {
         product.setPrice(price);
         product.setStock(stock);
 
-        // set tags จาก tagNames (ถ้ามี)
         if (tagNames != null && !tagNames.isEmpty()) {
-            Set<Tag> productTags = new java.util.HashSet<>();
-            for (String tagName : tagNames) {
-                Tag tag = tagRepository.findByName(tagName).orElse(null);
-                if (tag == null) {
-                    tag = new Tag(tagName);
-                    tag = tagRepository.save(tag);
-                }
-                productTags.add(tag);
-            }
-            product.setTags(productTags);
+            product.setTags(resolveTags(tagNames));
         }
 
         MediaItem media = new MediaItem();
@@ -159,11 +172,14 @@ public class ProductService {
         return productRepository.save(product);
     }
 
+    // =========================
+    // Read helpers
+    // =========================
     public List<Product> getProductsByTags(List<String> tagNames) {
         return productRepository.findByTagsNameIn(tagNames);
     }
 
-    public List<Product> getProductsByStore(com.example.E_commerceStore.WebApp.model.Store store) {
+    public List<Product> getProductsByStore(Store store) {
         return productRepository.findByStore(store);
     }
 
@@ -179,64 +195,85 @@ public class ProductService {
         return productRepository.findById(id);
     }
 
+    // =========================
+    // Create/Update plain
+    // =========================
     public Product saveProduct(Product product) {
-        if (product.getName() == null || product.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Product name is required");
-        }
-        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Price must be greater than 0");
-        }
-        if (product.getStock() == null || product.getStock() < 0) {
-            throw new IllegalArgumentException("Stock must be non-negative");
-        }
+        validateProductBasics(product);
 
-        // Ensure all tags are persisted before assigning to product
+        // normalize & persist tags
         if (product.getTags() != null && !product.getTags().isEmpty()) {
-            Set<Tag> managedTags = new java.util.HashSet<>();
-            for (Tag tag : product.getTags()) {
-                Tag managedTag = tagRepository.findByName(tag.getName()).orElse(null);
-                if (managedTag == null) {
-                    managedTag = new Tag(tag.getName());
-                    managedTag = tagRepository.save(managedTag);
+            Set<Tag> managed = new HashSet<>();
+            for (Tag t : product.getTags()) {
+                Tag db = tagRepository.findByName(t.getName()).orElse(null);
+                if (db == null) {
+                    db = tagRepository.save(new Tag(t.getName()));
                 }
-                managedTags.add(managedTag);
+                managed.add(db);
             }
-            product.setTags(managedTags);
+            product.setTags(managed);
         }
 
         return productRepository.save(product);
     }
 
     public Product updateProduct(Long id, Product productDetails) {
-        Optional<Product> existingProduct = productRepository.findById(id);
-        if (existingProduct.isPresent()) {
-            Product product = existingProduct.get();
-            if (productDetails.getName() != null) {
-                product.setName(productDetails.getName());
-            }
-            if (productDetails.getDescription() != null) {
-                product.setDescription(productDetails.getDescription());
-            }
-            if (productDetails.getPrice() != null) {
-                product.setPrice(productDetails.getPrice());
-            }
-            // imageUrl removed, handled by MediaItem
-            if (productDetails.getStock() != null) {
-                product.setStock(productDetails.getStock());
-            }
-            return productRepository.save(product);
-        }
-        return null;
+        return productRepository.findById(id)
+                .map(p -> {
+                    if (productDetails.getName() != null) p.setName(productDetails.getName());
+                    if (productDetails.getDescription() != null) p.setDescription(productDetails.getDescription());
+                    if (productDetails.getPrice() != null) p.setPrice(productDetails.getPrice());
+                    if (productDetails.getStock() != null) p.setStock(productDetails.getStock());
+                    // imageUrl handled via MediaItem entity – ไม่แก้ตรงนี้
+                    return productRepository.save(p);
+                })
+                .orElse(null);
     }
 
+    // =========================
+    // Delete with relations
+    // =========================
+    @Transactional
     public boolean deleteProduct(Long id) {
-        if (productRepository.existsById(id)) {
-            productRepository.deleteById(id);
-            return true;
-        }
-        return false;
+        Optional<Product> opt = productRepository.findById(id);
+        if (opt.isEmpty()) return false;
+        Product product = opt.get();
+
+        // ลบสิ่งที่อ้างอิงสินค้า (ถ้า repo ของคุณมีเมธอดเฉพาะจะเร็วกว่า)
+        try {
+            // ถ้า CartItemRepository มี deleteByProductId ใช้อันนั้นแทนจะดีกว่า
+            cartItemRepository.deleteAll(
+                    cartItemRepository.findAll()
+                            .stream()
+                            .filter(c -> c.getProduct().getId().equals(id))
+                            .toList()
+            );
+        } catch (Exception ignore) {}
+
+        try {
+            // ถ้า repo มี deleteByProductId ให้เปลี่ยนมาใช้จะมีประสิทธิภาพกว่า
+            productReviewRepository.deleteAll(productReviewRepository.findByProductId(id));
+        } catch (Exception ignore) {}
+
+        try {
+            mediaItemRepository.deleteByProductId(id);
+        } catch (Exception ignore) {}
+
+        try {
+            orderItemRepository.deleteByProductId(id);
+        } catch (Exception ignore) {}
+
+        try {
+            commentRepository.deleteByProduct(product);
+        } catch (Exception ignore) {}
+
+        productRepository.deleteById(id);
+        return true;
     }
 
+    // =========================
+    // Queries
+    // =========================
     public List<Product> searchProducts(String keyword) {
         return productRepository.searchByKeyword(keyword);
     }
@@ -257,33 +294,37 @@ public class ProductService {
         return productRepository.count();
     }
 
+    // =========================
+    // Stock helpers
+    // =========================
     public boolean isProductInStock(Long productId) {
-        Optional<Product> product = productRepository.findById(productId);
-        return product.isPresent() && product.get().getStock() > 0;
+        return productRepository.findById(productId)
+                .map(p -> p.getStock() != null && p.getStock() > 0)
+                .orElse(false);
     }
 
     public Integer getProductStock(Long productId) {
-        Optional<Product> product = productRepository.findById(productId);
-        return product.map(Product::getStock).orElse(0);
+        return productRepository.findById(productId)
+                .map(Product::getStock)
+                .orElse(0);
     }
 
     public Product updateStock(Long productId, Integer newStock) {
-        Optional<Product> existingProduct = productRepository.findById(productId);
-        if (existingProduct.isPresent()) {
-            Product product = existingProduct.get();
-            product.setStock(newStock);
-            return productRepository.save(product);
-        }
-        throw new IllegalArgumentException("Product not found with id: " + productId);
+        return productRepository.findById(productId)
+                .map(p -> {
+                    p.setStock(newStock);
+                    return productRepository.save(p);
+                })
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
     }
 
     public boolean reduceStock(Long productId, Integer quantity) {
-        Optional<Product> existingProduct = productRepository.findById(productId);
-        if (existingProduct.isPresent()) {
-            Product product = existingProduct.get();
-            if (product.getStock() >= quantity) {
-                product.setStock(product.getStock() - quantity);
-                productRepository.save(product);
+        Optional<Product> ex = productRepository.findById(productId);
+        if (ex.isPresent()) {
+            Product p = ex.get();
+            if (p.getStock() != null && p.getStock() >= quantity) {
+                p.setStock(p.getStock() - quantity);
+                productRepository.save(p);
                 return true;
             }
         }
@@ -291,13 +332,12 @@ public class ProductService {
     }
 
     public Product addStock(Long productId, Integer quantity) {
-        Optional<Product> existingProduct = productRepository.findById(productId);
-        if (existingProduct.isPresent()) {
-            Product product = existingProduct.get();
-            product.setStock(product.getStock() + quantity);
-            return productRepository.save(product);
-        }
-        throw new IllegalArgumentException("Product not found with id: " + productId);
+        return productRepository.findById(productId)
+                .map(p -> {
+                    p.setStock((p.getStock() == null ? 0 : p.getStock()) + quantity);
+                    return productRepository.save(p);
+                })
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
     }
 
     public List<Product> getLowStockProducts(Integer threshold) {
@@ -306,5 +346,38 @@ public class ProductService {
 
     public List<Product> getOutOfStockProducts() {
         return productRepository.findByStock(0);
+    }
+
+    // =========================
+    // Helpers
+    // =========================
+    private Set<Tag> resolveTags(List<String> tagNames) {
+        Set<Tag> tags = new HashSet<>();
+        for (String name : tagNames) {
+            if (name == null || name.isBlank()) continue;
+            Tag tag = tagRepository.findByName(name).orElseGet(() -> tagRepository.save(new Tag(name)));
+            tags.add(tag);
+        }
+        return tags;
+    }
+
+    private void validateProductBasics(Product product) {
+        if (product.getName() == null || product.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Product name is required");
+        }
+        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Price must be greater than 0");
+        }
+        if (product.getStock() == null || product.getStock() < 0) {
+            throw new IllegalArgumentException("Stock must be non-negative");
+        }
+    }
+
+    private String randomizeFilename(String original) {
+        String ext = "";
+        if (original != null && original.contains(".")) {
+            ext = original.substring(original.lastIndexOf('.'));
+        }
+        return UUID.randomUUID() + ext;
     }
 }

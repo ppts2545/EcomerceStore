@@ -500,10 +500,11 @@ function App() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = await res.json();
       const updated = normalizeProduct(raw);
-      setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-      setFilteredProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-      setEditingProduct(null);
-      alert(`✅ แก้ไขสินค้า "${updated.name}" สำเร็จ!`);
+  setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+  setFilteredProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+  setEditingProduct(null);
+  alert(`✅ แก้ไขสินค้า "${updated.name}" สำเร็จ!`);
+  await fetchProducts(); // โหลดสินค้าใหม่ทันที
     } catch (err) {
       console.error('Error updating product:', err);
       alert('❌ เกิดข้อผิดพลาดในการแก้ไขสินค้า กรุณาลองใหม่อีกครั้ง');
@@ -526,9 +527,10 @@ function App() {
         credentials: 'include', // ✅
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setProducts((prev) => prev.filter((p) => p.id !== productId));
-      setFilteredProducts((prev) => prev.filter((p) => p.id !== productId));
-      alert(`✅ ลบสินค้า "${productName}" สำเร็จ!`);
+  setProducts((prev) => prev.filter((p) => p.id !== productId));
+  setFilteredProducts((prev) => prev.filter((p) => p.id !== productId));
+  alert(`✅ ลบสินค้า "${productName}" สำเร็จ!`);
+  await fetchProducts(); // โหลดสินค้าใหม่ทันที
     } catch (err) {
       console.error('Error deleting product:', err);
       alert('❌ เกิดข้อผิดพลาดในการลบสินค้า กรุณาลองใหม่อีกครั้ง');
@@ -801,7 +803,14 @@ function App() {
 
                 {showAddForm && isAdmin && <AddProductForm onSubmit={handleAddProduct} onCancel={() => setShowAddForm(false)} isLoading={isSubmitting} />}
 
-                {editingProduct && isAdmin && <EditProductForm product={editingProduct} onSubmit={handleEditProduct} onCancel={() => setEditingProduct(null)} />}
+                {editingProduct && isAdmin && (
+                  <EditProductForm
+                    product={editingProduct}
+                    onSubmit={handleEditProduct}
+                    onCancel={() => setEditingProduct(null)}
+                    onDelete={handleDeleteProduct}
+                  />
+                )}
               </div>
             </section>
           </main>
