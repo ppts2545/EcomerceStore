@@ -42,13 +42,16 @@ interface Product {
   id: number;
   name: string;
   description: string;
-  price: number; // THB directly for UI
-  imageUrl: string; // absolute URL (normalized)
+  price: number;            // THB directly for UI
+  imageUrl: string;         // absolute URL (normalized)
   stock: number;
-  sold?: number; // จำนวนขาย (optional for compatibility)
+  sold?: number;            // จำนวนขาย (optional for compatibility)
   tags?: { id: number; name: string }[];
   mediaItems?: MediaItem[];
 
+  // ✅ เพิ่มฟิลด์เกี่ยวกับร้านค้า
+  storeId?: number;
+  storeName?: string;
 }
 
 // =========================
@@ -100,15 +103,21 @@ const mapBackendMedia = (p: any): MediaItem[] | undefined => {
   }));
 };
 
+// ✅ ปรับ normalize ให้รองรับข้อมูลร้านหลายรูปแบบ
 const normalizeProduct = (p: any): Product => {
   const mediaItems = mapBackendMedia(p);
+
   // take DB imageUrl (or image...) as primary; do NOT inject demo images
   let imageUrl = normalizeImageUrl({ ...p, mediaItems });
   if (!imageUrl) {
-    // if DB provided media list, pick first image; otherwise leave empty
     const firstImg = mediaItems?.find((m) => m.type === 'image')?.url;
     imageUrl = toAbsoluteUrl(firstImg) || '';
   }
+
+  // รองรับทั้ง p.storeId, p.store_id, p.store?.id
+  const rawStoreId = p.storeId ?? p.store_id ?? p.store?.id;
+  const storeId = Number(rawStoreId);
+  const storeName = p.store?.name ?? p.storeName ?? undefined;
 
   return {
     id: Number(p.id),
@@ -119,6 +128,8 @@ const normalizeProduct = (p: any): Product => {
     stock: Number(p.stock) ?? 0,
     tags: p.tags,
     mediaItems,
+    storeId: Number.isFinite(storeId) && storeId > 0 ? storeId : undefined,
+    storeName,
   };
 };
 
@@ -129,16 +140,49 @@ const parseProductsPayload = (payload: any): any[] => {
   return [];
 };
 
+// =========================
+// ✅ Randomize & Filter helpers (เฉพาะสินค้าที่มีร้าน และกระจายตามร้าน)
+// =========================
+const hasStoreLink = (p: Product) => Boolean(p.storeId);
+
+// Fisher–Yates shuffle
+const shuffle = <T,>(arr: T[]): T[] => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+// กระจายแบบยุติธรรม (จำกัดต่อร้าน) แล้วสุ่มรวม
+const pickRandomPerStore = (
+  items: Product[],
+  perStore = 6,    // ต่อร้านสูงสุด
+  maxTotal = 240   // ทั้งหมดสูงสุด
+): Product[] => {
+  const byStore = new Map<number, Product[]>();
+  for (const p of items) {
+    if (!p.storeId) continue;
+    if (!byStore.has(p.storeId)) byStore.set(p.storeId, []);
+    byStore.get(p.storeId)!.push(p);
+  }
+
+  const bucketed: Product[] = [];
+  for (const [, list] of byStore) {
+    const s = shuffle(list);
+    bucketed.push(...s.slice(0, perStore));
+  }
+  return shuffle(bucketed).slice(0, maxTotal);
+};
+
 function App() {
   // ===== Buy Now Handler =====
   const handleBuyNow = (productId: number) => {
-    // TODO: Replace with your backend logic or navigation
-    // Example: Add to cart and go to checkout page
     handleAddToCart(productId, 1);
     setShowCart(true);
-    // Or navigate to checkout page directly if needed
-    // window.location.href = `/checkout?productId=${productId}`;
   };
+
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,7 +256,6 @@ function App() {
   useEffect(() => {
     fetchProducts();
     loadCurrentUser();
-    // ถ้า SessionService ของคุณมี keep-alive พิเศษ คงไว้ได้
     AuthService.startAutoKeepAliveWithControl?.();
 
     return () => {
@@ -361,10 +404,16 @@ function App() {
       const arr = parseProductsPayload(parsed);
       const normalized: Product[] = arr.map((p: any) => normalizeProduct(p));
 
-      setProducts(normalized);
-      setFilteredProducts(normalized);
+      // ✅ แสดงเฉพาะสินค้าที่ “มีร้าน”
+      const onlyStore = normalized.filter(hasStoreLink);
+
+      // ✅ กระจายแบบยุติธรรม (ต่อร้านไม่เกิน X) + สุ่มรวม
+      const randomized = pickRandomPerStore(onlyStore, 6, 240);
+
+      setProducts(randomized);
+      setFilteredProducts(randomized);
       setPage(1); // ✅ เริ่มหน้าแรกเมื่อโหลดสินค้า
-      console.log('✅ Products loaded (DB images only):', normalized);
+      console.log('✅ Products (random & with store only):', randomized);
     } catch (err) {
       console.error('❌ Error fetching products:', err);
       setError('Failed to load products. Make sure backend is running on the configured API base.');
@@ -459,10 +508,12 @@ function App() {
       }
       const raw = await res.json();
       const normalizedNew = normalizeProduct(raw);
-      setProducts((prev) => [normalizedNew, ...prev]);
-      setFilteredProducts((prev) => [normalizedNew, ...prev]);
+
+      // ถ้าไม่มีร้าน จะไม่ถูกแสดงในหน้า Home (ตามกฎ)
+      setProducts((prev) => (normalizedNew.storeId ? [normalizedNew, ...prev] : prev));
+      setFilteredProducts((prev) => (normalizedNew.storeId ? [normalizedNew, ...prev] : prev));
       setShowAddForm(false);
-      setPage(1); // ✅ หลังเพิ่มของใหม่ กลับไปหน้าแรกให้เห็นของใหม่บนสุด
+      setPage(1);
       alert(`✅ เพิ่มสินค้า "${normalizedNew.name}" สำเร็จ!`);
     } catch (err) {
       console.error('❌ Error adding product:', err);
@@ -481,13 +532,11 @@ function App() {
 
     setIsSubmitting(true);
     try {
-      // ✅ ส่งเฉพาะฟิลด์ที่แบ็กเอนด์รองรับ (อย่าส่ง imageUrl/mediaItems)
       const editable = {
         name: productData.name.trim(),
         description: productData.description.trim(),
         price: Number(productData.price),
         stock: Number(productData.stock),
-        // ถ้าแบ็กเอนด์ต้องการ {id,name}[] ให้ส่งรูปแบบนั้นแทน
         tags: (productData.tags ?? []).map((t) => t.name),
       };
 
@@ -495,16 +544,17 @@ function App() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editable),
-        credentials: 'include', // ✅
+        credentials: 'include',
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = await res.json();
       const updated = normalizeProduct(raw);
-  setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-  setFilteredProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-  setEditingProduct(null);
-  alert(`✅ แก้ไขสินค้า "${updated.name}" สำเร็จ!`);
-  await fetchProducts(); // โหลดสินค้าใหม่ทันที
+
+      setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      setFilteredProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      setEditingProduct(null);
+      alert(`✅ แก้ไขสินค้า "${updated.name}" สำเร็จ!`);
+      await fetchProducts(); // โหลดสินค้าใหม่ทันที (ให้สุ่มใหม่ตามกฎ)
     } catch (err) {
       console.error('Error updating product:', err);
       alert('❌ เกิดข้อผิดพลาดในการแก้ไขสินค้า กรุณาลองใหม่อีกครั้ง');
@@ -524,13 +574,13 @@ function App() {
     try {
       const res = await fetch(`${API_BASE}/api/products/${productId}`, {
         method: 'DELETE',
-        credentials: 'include', // ✅
+        credentials: 'include',
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  setProducts((prev) => prev.filter((p) => p.id !== productId));
-  setFilteredProducts((prev) => prev.filter((p) => p.id !== productId));
-  alert(`✅ ลบสินค้า "${productName}" สำเร็จ!`);
-  await fetchProducts(); // โหลดสินค้าใหม่ทันที
+      setProducts((prev) => prev.filter((p) => p.id !== productId));
+      setFilteredProducts((prev) => prev.filter((p) => p.id !== productId));
+      alert(`✅ ลบสินค้า "${productName}" สำเร็จ!`);
+      await fetchProducts(); // รีเฟรช + สุ่มใหม่
     } catch (err) {
       console.error('Error deleting product:', err);
       alert('❌ เกิดข้อผิดพลาดในการลบสินค้า กรุณาลองใหม่อีกครั้ง');
@@ -701,7 +751,7 @@ function App() {
                           gap: 10,
                         }}
                       >
-                        🛍️ สินค้าทั้งหมด
+                        🎲 แนะนำจากหลายร้าน
                         <span style={{ fontSize: 14, color: '#666', fontWeight: 'normal' }}>({filteredProducts.length} รายการ)</span>
                       </h2>
 

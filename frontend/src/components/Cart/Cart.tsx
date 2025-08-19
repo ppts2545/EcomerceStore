@@ -1,8 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Cart.css';
 import CartService, { type CartItem } from '../../services/CartService';
 import AuthService, { type User } from '../../services/AuthService';
+
+/** ========= Helpers / Config ========= */
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8082').replace(/\/$/, '');
+
+// ตั้ง EXCHANGE_THB=35 ถ้าราคาในตะกร้าเป็น USD; ถ้าเป็นบาทอยู่แล้วให้ 1
+const EXCHANGE_THB = 1;
+
+const FALLBACK_72 =
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial" font-size="10">No Image</text></svg>';
+
+const toAbsolute = (u?: string): string => {
+  if (!u) return '';
+  if (/^(https?:|data:|blob:)/i.test(u)) return u;
+  return `${API_BASE}/${u.replace(/^\/+/, '')}`;
+};
+
+const pickItemImage = (item: any): string | undefined => {
+  return (
+    item.productImageUrl ?? // <-- from backend DTO
+    item.productImage ??
+    item.imageUrl ??
+    item.imageURL ??
+    item.image ??
+    item.thumbnail ??
+    (Array.isArray(item.mediaItems) && item.mediaItems.find((m: any) => m.type === 'image')?.url)
+  );
+};
+
+const imageSrcFor = (item: any): string => {
+  const raw = pickItemImage(item);
+  const abs = toAbsolute(raw);
+  return abs || FALLBACK_72;
+};
+
+const formatTHB = (n: number) => `฿${Math.round(n).toLocaleString()}`;
+
+/** =================================== */
 
 interface CartProps {
   isOpen: boolean;
@@ -19,22 +56,28 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
     if (isOpen) {
       loadCartItems();
       loadCurrentUser();
+      // ล็อกสกอลล์หน้าหลักเมื่อเปิด sidebar
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
     }
   }, [isOpen]);
 
   const loadCurrentUser = async () => {
-    const currentUser = await AuthService.getCurrentUser();
-    setUser(currentUser);
+    try {
+      const currentUser = await AuthService.getCurrentUser();
+      setUser(currentUser);
+    } catch {
+      setUser(null);
+    }
   };
 
   const loadCartItems = async () => {
     setLoading(true);
     try {
       const items = await CartService.getCartItems();
-      // Set default selection state - เลือกทุกรายการที่มีสต็อก
-      const itemsWithSelection = items.map(item => ({
+      const itemsWithSelection = items.map((item: any) => ({
         ...item,
-        selected: item.selected !== undefined ? item.selected : item.stock > 0
+        selected: item.selected !== undefined ? item.selected : item.stock > 0,
       }));
       setCartItems(itemsWithSelection);
     } catch (error) {
@@ -44,39 +87,41 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // Toggle selection state ของสินค้า
+  // Toggle selection
   const handleItemSelection = async (itemId: number) => {
-    const item = cartItems.find(item => item.id === itemId);
-    if (!item || item.stock === 0) return; // ไม่สามารถเลือกสินค้าที่หมดสต็อกได้
+    const target = cartItems.find((i) => i.id === itemId);
+    if (!target || target.stock === 0) return;
+    const nextSel = !target.selected;
 
-    const newSelected = !item.selected;
-    
-    // Update local state immediately for better UX
-    setCartItems(prev => prev.map(item => 
-      item.id === itemId 
-        ? { ...item, selected: newSelected }
-        : item
-    ));
+    setCartItems((prev) =>
+      prev.map((it) => (it.id === itemId ? { ...it, selected: nextSel } : it))
+    );
 
-    // Update server state
-    await CartService.updateItemSelection(itemId, newSelected);
+    try {
+      await CartService.updateItemSelection(itemId, nextSel);
+    } catch (e) {
+      // rollback if failed
+      setCartItems((prev) =>
+        prev.map((it) => (it.id === itemId ? { ...it, selected: !nextSel } : it))
+      );
+    }
   };
 
-  // Select/Deselect all available items
+  // Select/Deselect all
   const handleSelectAll = async () => {
-    const availableItems = cartItems.filter(item => item.stock > 0);
-    const allSelected = availableItems.every(item => item.selected);
-    const newSelectedState = !allSelected;
+    const avail = cartItems.filter((i) => i.stock > 0);
+    const allSelected = avail.every((i) => i.selected);
+    const next = !allSelected;
 
-    // Update local state
-    setCartItems(prev => prev.map(item => ({
-      ...item,
-      selected: item.stock > 0 ? newSelectedState : false
-    })));
+    setCartItems((prev) =>
+      prev.map((i) => ({ ...i, selected: i.stock > 0 ? next : false }))
+    );
 
-    // Update server state for each item
-    for (const item of availableItems) {
-      await CartService.updateItemSelection(item.id, newSelectedState);
+    try {
+      await Promise.all(avail.map((i) => CartService.updateItemSelection(i.id, next)));
+    } catch (e) {
+      // ถ้าพลาด ไม่ rollback รายตัว (UX: ผู้ใช้จะลองใหม่)
+      console.error(e);
     }
   };
 
@@ -85,23 +130,28 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
       await removeItem(itemId);
       return;
     }
+    const item = cartItems.find((i) => i.id === itemId);
+    if (!item) return;
+    if (newQuantity > item.stock) return;
+
+    // optimistic
+    setCartItems((prev) =>
+      prev.map((i) => (i.id === itemId ? { ...i, quantity: newQuantity } : i))
+    );
 
     try {
       await CartService.updateQuantity(itemId, newQuantity);
-      setCartItems(items =>
-        items.map(item =>
-          item.id === itemId ? { ...item, quantity: newQuantity } : item
-        )
-      );
     } catch (error) {
       console.error('Error updating quantity:', error);
+      // reload from server on error
+      loadCartItems();
     }
   };
 
   const removeItem = async (itemId: number) => {
     try {
       await CartService.removeItem(itemId);
-      setCartItems(items => items.filter(item => item.id !== itemId));
+      setCartItems((prev) => prev.filter((i) => i.id !== itemId));
     } catch (error) {
       console.error('Error removing item:', error);
     }
@@ -123,39 +173,46 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
       alert('กรุณาเข้าสู่ระบบก่อนทำการชำระเงิน');
       return;
     }
-
-    const selectedItems = cartItems.filter(item => item.selected);
+    const selectedItems = cartItems.filter((i) => i.selected && i.stock > 0);
     if (selectedItems.length === 0) {
       alert('กรุณาเลือกสินค้าที่ต้องการชำระเงิน');
       return;
     }
-
-    // Close cart and navigate to checkout
     onClose();
     navigate('/checkout');
   };
 
   if (!isOpen) return null;
 
+  // computed
+  const allAvailable = cartItems.filter((i) => i.stock > 0);
+  const allSelected = allAvailable.every((i) => i.selected);
+  const selectedCount = allAvailable.filter((i) => i.selected).length;
+  const totalItems = cartItems.reduce((sum, i) => sum + i.quantity, 0);
+  const selectedQty = cartItems
+    .filter((i) => i.selected && i.stock > 0)
+    .reduce((sum, i) => sum + i.quantity, 0);
+  const selectedTotal = cartItems
+    .filter((i) => i.selected && i.stock > 0)
+    .reduce((sum, i) => sum + i.price * EXCHANGE_THB * i.quantity, 0);
+
   return (
     <div className="cart-overlay" onClick={onClose}>
-      <div className="cart-sidebar" onClick={(e) => e.stopPropagation()}>
-        {/* Cart Header */}
-        <div className="cart-header">
+      <aside className="cart-sidebar" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <header className="cart-header">
           <div className="cart-title">
-            <h2>🛒 ตะกร้าสินค้า</h2>
-            {user && (
-              <span className="cart-user">สำหรับ: {user.firstName}</span>
-            )}
+            <h2>ตะกร้าสินค้า</h2>
+            {user && <span className="cart-user">สำหรับ: {user.firstName}</span>}
           </div>
-          <button className="cart-close" onClick={onClose}>×</button>
-        </div>
+          <button className="cart-close" onClick={onClose} aria-label="ปิด">×</button>
+        </header>
 
-        {/* Cart Content */}
+        {/* Content */}
         <div className="cart-content">
           {loading ? (
             <div className="cart-loading">
-              <div className="loading-spinner">⏳</div>
+              <div className="loading-spinner" />
               <p>กำลังโหลดตะกร้าสินค้า...</p>
             </div>
           ) : cartItems.length === 0 ? (
@@ -169,146 +226,141 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
             </div>
           ) : (
             <>
-              {/* Select All Header */}
-              <div className="select-all-section">
-                <label className="select-all-checkbox">
+              {/* Select All */}
+              <div className="select-all-row">
+                <label className="checkbox pill">
                   <input
                     type="checkbox"
-                    checked={cartItems.filter(item => item.stock > 0).every(item => item.selected)}
+                    checked={allAvailable.length > 0 && allSelected}
                     onChange={handleSelectAll}
                   />
-                  <span className="checkmark"></span>
-                  เลือกทั้งหมด ({cartItems.filter(item => item.stock > 0 && item.selected).length}/{cartItems.filter(item => item.stock > 0).length})
+                  <span className="checkmark" />
+                  เลือกทั้งหมด ({selectedCount}/{allAvailable.length})
                 </label>
+                <button className="clear-all" onClick={clearCart}>
+                  ลบทั้งหมด
+                </button>
               </div>
 
-              {/* Cart Items */}
+              {/* Items */}
               <div className="cart-items">
-                {cartItems.map((item) => (
-                  <div key={item.id} className={`cart-item ${item.stock === 0 ? 'out-of-stock' : ''} ${item.selected ? 'selected' : ''}`}>
-                    {/* Selection Checkbox */}
-                    <div className="item-selection">
-                      <label className="item-checkbox">
+                {cartItems.map((item) => {
+                  const unit = item.price * EXCHANGE_THB;
+                  const rowTotal = unit * item.quantity;
+                  const img = imageSrcFor(item);
+                  return (
+                    <div
+                      key={item.id}
+                      className={`cart-item ${item.stock === 0 ? 'out' : ''} ${item.selected ? 'selected' : ''}`}
+                    >
+                      {/* Checkbox */}
+                      <label className="checkbox square">
                         <input
                           type="checkbox"
-                          checked={item.selected || false}
+                          checked={!!item.selected}
                           onChange={() => handleItemSelection(item.id)}
                           disabled={item.stock === 0}
                         />
-                        <span className="checkmark"></span>
+                        <span className="checkmark" />
                       </label>
-                    </div>
 
-                    <div className="item-image">
-                      <img 
-                        src={item.productImage || '/placeholder-product.jpg'} 
-                        alt={item.productName}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/120x120?text=No+Image';
-                        }}
-                      />
-                      {item.stock === 0 && (
-                        <div className="out-of-stock-overlay">หมด</div>
-                      )}
-                    </div>
-                    
-                    <div className="item-details">
-                      <h4 className="item-name">
-                        {item.productName}
-                        {item.stock === 0 && <span className="stock-badge">สินค้าหมด</span>}
-                      </h4>
-                      {item.description && (
-                        <p className="item-description">{item.description}</p>
-                      )}
-                      <div className="item-price-info">
-                        <span className="unit-price">฿{(item.price * 35).toLocaleString()} / ชิ้น</span>
-                        <span className="stock-info">คงเหลือ: {item.stock} ชิ้น</span>
+                      {/* Image */}
+                      <div className="item-image">
+                        <img
+                          crossOrigin="anonymous"
+                          src={img}
+                          alt={item.productName}
+                          onError={(e) => {
+                            const el = e.currentTarget as HTMLImageElement;
+                            if (el.dataset.fallbackApplied) return;
+                            el.dataset.fallbackApplied = '1';
+                            el.src = FALLBACK_72;
+                          }}
+                        />
+                        {item.stock === 0 && <div className="badge-out">หมด</div>}
                       </div>
-                      
-                      <div className="quantity-controls">
-                        <button 
-                          className="qty-btn minus"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                        >
-                          −
-                        </button>
-                        <span className="quantity">{item.quantity}</span>
-                        <button 
-                          className="qty-btn plus"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          disabled={item.quantity >= item.stock}
-                        >
-                          +
-                        </button>
-                      </div>
-                      
-                      <div className="item-total">
-                        <strong>รวม: ฿{(item.price * item.quantity * 35).toLocaleString()}</strong>
-                        {!item.selected && item.stock > 0 && (
-                          <span className="not-selected-note">ไม่รวมในการคำนวณ</span>
+
+                      {/* Details */}
+                      <div className="item-info">
+                        <div className="item-name">{item.productName}</div>
+
+                        {item.description && (
+                          <div className="item-desc">{item.description}</div>
                         )}
+
+                        <div className="row meta">
+                          <div className="unit-price">{formatTHB(unit)} / ชิ้น</div>
+                          <div className="stock">คงเหลือ: {item.stock}</div>
+                        </div>
+
+                        <div className="row actions">
+                          <div className="qty">
+                            <button
+                              className="step"
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              disabled={item.quantity <= 1}
+                              aria-label="ลดจำนวน"
+                            >
+                              −
+                            </button>
+                            <span className="value">{item.quantity}</span>
+                            <button
+                              className="step"
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              disabled={item.quantity >= item.stock}
+                              aria-label="เพิ่มจำนวน"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <div className="rowtotal">{formatTHB(rowTotal)}</div>
+                        </div>
                       </div>
+
+                      {/* Remove */}
+                      <button
+                        className="remove"
+                        onClick={() => removeItem(item.id)}
+                        title="ลบสินค้า"
+                        aria-label="ลบสินค้า"
+                      >
+                        🗑️
+                      </button>
                     </div>
-                    
-                    <button 
-                      className="remove-btn"
-                      onClick={() => removeItem(item.id)}
-                      title="ลบสินค้า"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              {/* Cart Summary */}
-              <div className="cart-summary">
-                <div className="summary-row">
-                  <span>สินค้าทั้งหมด:</span>
-                  <span>{cartItems.reduce((total, item) => total + item.quantity, 0)} ชิ้น</span>
-                </div>
-                <div className="summary-row">
-                  <span>สินค้าที่เลือก:</span>
-                  <span>{CartService.getSelectedCount(cartItems)} รายการ</span>
-                </div>
-                <div className="summary-row">
-                  <span>จำนวนที่เลือก:</span>
-                  <span>{cartItems.filter(item => item.selected && item.stock > 0).reduce((total, item) => total + item.quantity, 0)} ชิ้น</span>
-                </div>
-                <div className="summary-row total">
-                  <span>ยอดรวม (เฉพาะที่เลือก):</span>
-                  <span>฿{CartService.calculateSelectedTotal(cartItems).toLocaleString()}</span>
-                </div>
-                {cartItems.some(item => !item.selected && item.stock > 0) && (
-                  <div className="summary-note">
-                    * รวมเฉพาะสินค้าที่เลือกไว้เท่านั้น
-                  </div>
-                )}
-              </div>
-
-              {/* Cart Actions */}
-              <div className="cart-actions">
-                <button className="clear-cart-btn" onClick={clearCart}>
-                  ลบทั้งหมด
-                </button>
-                <button 
-                  className="checkout-btn" 
-                  onClick={handleCheckout}
-                  disabled={CartService.getSelectedCount(cartItems) === 0}
-                >
-                  ชำระเงิน ({CartService.getSelectedCount(cartItems)} รายการ)
-                  {CartService.getSelectedCount(cartItems) > 0 && (
-                    <span className="checkout-total">
-                      ฿{CartService.calculateSelectedTotal(cartItems).toLocaleString()}
-                    </span>
-                  )}
-                </button>
+                  );
+                })}
               </div>
             </>
           )}
         </div>
-      </div>
+
+        {/* Sticky Footer Summary */}
+        {cartItems.length > 0 && (
+          <footer className="cart-footer">
+            <div className="summary">
+              <div className="sum-left">
+                <div>ทั้งหมด: <strong>{totalItems}</strong> ชิ้น</div>
+                <div>ที่เลือก: <strong>{selectedQty}</strong> ชิ้น</div>
+              </div>
+              <div className="sum-right">
+                <div className="sum-title">ยอดรวม</div>
+                <div className="sum-total">{formatTHB(selectedTotal)}</div>
+              </div>
+            </div>
+
+            <button
+              className="checkout"
+              onClick={handleCheckout}
+              disabled={selectedCount === 0}
+            >
+              ชำระเงิน
+              {selectedCount > 0 && (
+                <span className="pill">{selectedCount} รายการ</span>
+              )}
+            </button>
+          </footer>
+        )}
+      </aside>
     </div>
   );
 };

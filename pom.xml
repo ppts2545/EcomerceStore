@@ -57,8 +57,11 @@
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
+				   <artifactId>spring-boot-maven-plugin</artifactId>
+				   <configuration>
+					   <mainClass>com.example.E_commerceStore.WebApp.Application</mainClass>
+				   </configuration>
+			   </plugin>
 		</plugins>
 	</build>
 

@@ -34,6 +34,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, onCancel, isL
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    // เก็บเป็น string ระหว่างพิมพ์ เพื่อไม่ให้ React บล็อคการพิมพ์
     price: '',
     stock: '',
     tags: [] as string[],
@@ -76,7 +77,63 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, onCancel, isL
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
-  // ====== helpers ======
+  // ====== Numeric helpers & handlers ======
+  const blockInvalidNumberKeys = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // กัน e/E/+/-
+    if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
+  };
+
+  const sanitizePrice = (raw: string) => {
+    // เก็บเฉพาะตัวเลขและจุด
+    let v = raw.replace(/[^\d.]/g, '');
+
+    // ให้มีจุดทศนิยมได้จุดเดียว
+    const firstDot = v.indexOf('.');
+    if (firstDot !== -1) {
+      const before = v.slice(0, firstDot);
+      const after = v.slice(firstDot + 1).replace(/\./g, ''); // ลบจุดตัวอื่น
+      // จำกัดทศนิยมไม่เกิน 2
+      v = before + '.' + after.slice(0, 2);
+    }
+
+    // ลบ 0 นำหน้าที่เกินจำเป็น (ยกเว้น "0", "0.", "0.x")
+    if (!v.startsWith('0.') && v !== '' && v !== '0') {
+      v = v.replace(/^0+(\d)/, '$1');
+    }
+    return v;
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = sanitizePrice(e.target.value);
+    setFormData((prev) => ({ ...prev, price: v }));
+    if (errors.price) setErrors((prev) => ({ ...prev, price: '' }));
+  };
+
+  const handlePricePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text');
+    const v = sanitizePrice(text);
+    setFormData((prev) => ({ ...prev, price: v }));
+    if (errors.price) setErrors((prev) => ({ ...prev, price: '' }));
+  };
+
+  const sanitizeStock = (raw: string) => raw.replace(/[^\d]/g, '');
+
+  const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = sanitizeStock(e.target.value);
+    setFormData((prev) => ({ ...prev, stock: v }));
+    if (errors.stock) setErrors((prev) => ({ ...prev, stock: '' }));
+  };
+
+  const handleStockPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text');
+    const v = sanitizeStock(text);
+    setFormData((prev) => ({ ...prev, stock: v }));
+    if (errors.stock) setErrors((prev) => ({ ...prev, stock: '' }));
+  };
+
+  // ====== media helpers ======
   const addMediaFromFiles = (files: FileList) => {
     const room = MAX_MEDIA - mediaItems.length;
     const chosen = Array.from(files).slice(0, room);
@@ -112,13 +169,15 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, onCancel, isL
     if (!formData.name.trim()) newErrors.name = 'กรุณาใส่ชื่อสินค้า';
     if (!formData.description.trim()) newErrors.description = 'กรุณาใส่คำอธิบายสินค้า';
 
+    const priceNum = parseFloat(formData.price || '0');
     if (!formData.price) newErrors.price = 'กรุณาใส่ราคา';
-    else if (Number.isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) newErrors.price = 'ราคาต้องมากกว่า 0';
+    else if (Number.isNaN(priceNum) || priceNum <= 0) newErrors.price = 'ราคาต้องมากกว่า 0';
 
     if (!imageFile) newErrors.imageFile = 'กรุณาอัปโหลดรูปภาพหลักของสินค้า';
 
+    const stockNum = parseInt(formData.stock || '0', 10);
     if (!formData.stock) newErrors.stock = 'กรุณาใส่สต็อก';
-    else if (Number.isNaN(parseInt(formData.stock)) || parseInt(formData.stock) < 0) newErrors.stock = 'สต็อกต้อง ≥ 0';
+    else if (Number.isNaN(stockNum) || stockNum < 0) newErrors.stock = 'สต็อกต้อง ≥ 0';
 
     if (!formData.tags || formData.tags.length === 0) newErrors.tags = 'เลือกหมวดหมู่อย่างน้อย 1 หมวด';
 
@@ -134,8 +193,8 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, onCancel, isL
     const payload: SubmitPayload = {
       name: formData.name.trim(),
       description: formData.description.trim(),
-      price: parseFloat(formData.price),
-      stock: parseInt(formData.stock),
+      price: parseFloat(formData.price || '0'),
+      stock: parseInt(formData.stock || '0', 10),
       tags: formData.tags,
       media: mediaItems,
       imageFile,
@@ -156,7 +215,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, onCancel, isL
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
@@ -288,7 +347,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, onCancel, isL
                   type="text"
                   name="name"
                   value={formData.name}
-                  onChange={handleInputChange}
+                  onChange={handleTextChange}
                   placeholder="เช่น iPhone 15 Pro Max"
                   className={errors.name ? 'error' : ''}
                   disabled={isLoading}
@@ -300,13 +359,13 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, onCancel, isL
                 <div>
                   <label>ราคา (บาท) *</label>
                   <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
+                    type="text"
+                    inputMode="decimal"
                     placeholder="0.00"
-                    step="0.01"
-                    min={0}
+                    value={formData.price}
+                    onChange={handlePriceChange}
+                    onKeyDown={blockInvalidNumberKeys}
+                    onPaste={handlePricePaste}
                     className={errors.price ? 'error' : ''}
                     disabled={isLoading}
                   />
@@ -315,12 +374,13 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, onCancel, isL
                 <div>
                   <label>สต็อก *</label>
                   <input
-                    type="number"
-                    name="stock"
-                    value={formData.stock}
-                    onChange={handleInputChange}
+                    type="text"
+                    inputMode="numeric"
                     placeholder="0"
-                    min={0}
+                    value={formData.stock}
+                    onChange={handleStockChange}
+                    onKeyDown={blockInvalidNumberKeys}
+                    onPaste={handleStockPaste}
                     className={errors.stock ? 'error' : ''}
                     disabled={isLoading}
                   />
@@ -338,7 +398,13 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, onCancel, isL
                         key={opt.value}
                         type="button"
                         className={`chip ${active ? 'is-active' : ''}`}
-                        onClick={() => toggleTag(opt.value)}
+                        onClick={() => {
+                          const next = active
+                            ? formData.tags.filter((t) => t !== opt.value)
+                            : [...formData.tags, opt.value];
+                          setFormData((prev) => ({ ...prev, tags: next }));
+                          if (errors.tags) setErrors((prev) => ({ ...prev, tags: '' }));
+                        }}
                         disabled={isLoading}
                       >
                         {opt.label}
@@ -354,7 +420,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSubmit, onCancel, isL
                 <textarea
                   name="description"
                   value={formData.description}
-                  onChange={handleInputChange}
+                  onChange={handleTextChange}
                   placeholder="อธิบายรายละเอียดสินค้า คุณสมบัติ จุดเด่น วิธีใช้งาน ฯลฯ"
                   rows={6}
                   className={errors.description ? 'error' : ''}

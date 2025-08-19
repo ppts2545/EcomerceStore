@@ -1,34 +1,41 @@
 package com.example.E_commerceStore.WebApp.controller;
 
+import com.example.E_commerceStore.WebApp.dto.ProductDto;
 import com.example.E_commerceStore.WebApp.model.Product;
 import com.example.E_commerceStore.WebApp.service.ProductService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.math.BigDecimal;
-import java.util.*;
+
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.util.StringUtils;
-import com.example.E_commerceStore.WebApp.model.MediaItem;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
 
-    @Autowired
-    private ProductService productService;
+    private final ProductService productService;
+    public ProductController(ProductService productService) { this.productService = productService; }
 
+    // -------- READ (DTO) --------
     @GetMapping
-    public List<Product> getAllProducts() {
-        return productService.getAllProducts();
+    public List<ProductDto> getAllProducts() {
+        return productService.getAllProducts(); // DTO
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable(value = "id") Long productId) {
-        Optional<Product> product = productService.getProductById(productId);
+    public ResponseEntity<ProductDto> getProductById(@PathVariable("id") Long productId) {
+        Optional<ProductDto> product = productService.getProductById(productId); // DTO
         return product.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/store/{storeId}")
+    public List<ProductDto> getProductsByStore(@PathVariable Long storeId) {
+        return productService.getProductsByStoreId(storeId); // DTO
+    }
+
+    // -------- WRITE (Entity) --------
     @PostMapping
     public ResponseEntity<Product> createProduct(@RequestBody Product product) {
         Product created = productService.saveProduct(product);
@@ -36,27 +43,19 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable(value = "id") Long productId,
+    public ResponseEntity<Product> updateProduct(@PathVariable("id") Long productId,
                                                  @RequestBody Product productDetails) {
         Product updated = productService.updateProduct(productId, productDetails);
-        if (updated != null) {
-            return ResponseEntity.ok(updated);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable(value = "id") Long productId) {
-        boolean deleted = productService.deleteProduct(productId);
-        if (deleted) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Void> deleteProduct(@PathVariable("id") Long productId) {
+        productService.deleteProduct(productId);
+        return ResponseEntity.ok().build();
     }
 
-    // อัปโหลดสินค้าใหม่พร้อมรูปภาพหลักและ media หลายไฟล์ (multipart/form-data)
+    // อัปโหลดสินค้าพร้อมรูป (multipart/form-data)
     @PostMapping("/upload")
     public ResponseEntity<?> uploadProduct(
             @RequestParam("name") String name,
@@ -68,12 +67,14 @@ public class ProductController {
             @RequestParam(value = "mediaFiles", required = false) List<MultipartFile> mediaFiles,
             @RequestParam(value = "mediaTypes", required = false) List<String> mediaTypes,
             @RequestParam(value = "mediaAlts", required = false) List<String> mediaAlts,
-            @RequestParam(value = "mediaDisplayOrders", required = false) List<String> mediaDisplayOrders
+            @RequestParam(value = "mediaDisplayOrders", required = false) List<String> mediaDisplayOrders,
+            @RequestParam(value = "storeId", required = false) Long storeId
     ) {
         try {
-            Product created = productService.saveProductWithImagesAndMedia(
-                name, description, price, stock, tags, imageFile,
-                mediaFiles, mediaTypes, mediaAlts, mediaDisplayOrders
+            var created = productService.saveProductWithImagesAndMedia(
+                    name, description, price, stock, tags, imageFile,
+                    mediaFiles, mediaTypes, mediaAlts, mediaDisplayOrders,
+                    storeId
             );
             return ResponseEntity.ok(created);
         } catch (Exception e) {
@@ -81,4 +82,3 @@ public class ProductController {
         }
     }
 }
-
