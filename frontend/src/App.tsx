@@ -405,15 +405,12 @@ function App() {
       const normalized: Product[] = arr.map((p: any) => normalizeProduct(p));
 
       // ✅ แสดงเฉพาะสินค้าที่ “มีร้าน”
-      const onlyStore = normalized.filter(hasStoreLink);
+      const onlyStore = normalized.filter(p => p.storeId != null); // มี store ก็พอ
+      setProducts(onlyStore);
+      setFilteredProducts(onlyStore);
 
-      // ✅ กระจายแบบยุติธรรม (ต่อร้านไม่เกิน X) + สุ่มรวม
-      const randomized = pickRandomPerStore(onlyStore, 6, 240);
-
-      setProducts(randomized);
-      setFilteredProducts(randomized);
       setPage(1); // ✅ เริ่มหน้าแรกเมื่อโหลดสินค้า
-      console.log('✅ Products (random & with store only):', randomized);
+      
     } catch (err) {
       console.error('❌ Error fetching products:', err);
       setError('Failed to load products. Make sure backend is running on the configured API base.');

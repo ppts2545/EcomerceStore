@@ -1,0 +1,145 @@
+.
+├── AUTHENTICATION_READY.md
+├── backend
+│   ├── db.sqlite3
+│   ├── dev-oauth2-config.properties
+│   ├── generate-dev-keystore.sh
+│   ├── HELP.md
+│   ├── mvnw
+│   ├── mvnw.cmd
+│   ├── oauth2-setup-guide.txt
+│   ├── pom.xml
+│   ├── src
+│   │   ├── main
+│   │   └── test
+│   ├── target
+│   │   ├── classes
+│   │   ├── generated-sources
+│   │   ├── generated-test-sources
+│   │   ├── maven-status
+│   │   └── test-classes
+│   ├── test-session-config.properties
+│   └── uploads
+│       ├── 056088ec-fb81-4358-85e4-5db57fddc6bd.jpg
+│       ├── 092195d9-2d25-4b60-9c73-df514a3d3989.gif
+│       ├── 0d387be7-9fdb-446d-bf46-6557116669ac.jpg
+│       ├── 0ecb066d-e246-4013-86ca-ee080db0f294.jpeg
+│       ├── 15daebc5-8e2f-4bab-a605-ac45d8a25252.jpeg
+│       ├── 16473e55-f4cb-44a1-8b12-96626b3fc3eb.jpeg
+│       ├── 1aa8bea8-36ce-4234-a6ae-d27ac2816b95.webp
+│       ├── 2be44668-0f5d-4847-ac36-10d052cc889b.webp
+│       ├── 2c7a6ba9-4947-4792-b30c-e1128b303721.avif
+│       ├── 3373cbf6-1888-4661-89ef-f1c04833baa6.webp
+│       ├── 3754d88a-a8be-4322-9f2b-a80f671c84fe.avif
+│       ├── 408ec4fd-d6a3-40d7-8dae-d6d5587d034f.webp
+│       ├── 4dde238e-b214-40dc-9d07-4b110febe52e.webp
+│       ├── 530c9006-91f8-42e1-bcb0-9730da43d43f.webp
+│       ├── 66f8fb41-c200-4221-914c-0a09c4f9b1a1.jpg
+│       ├── 6cac7bc6-a6eb-407f-b988-2c4388ab316e.jpg
+│       ├── 72152b7c-07e8-4d13-bebe-11e2dcc59505.jpg
+│       ├── 75fdb4df-c862-4295-a9b2-78a1b54c8826.jpg
+│       ├── 7bcef96d-7e98-47d4-ae02-65e1dd9f09ca.webp
+│       ├── 8d92d3bf-2437-4e7c-9e88-98355b05e93b.avif
+│       ├── 9882018d-80ac-4d2f-bd82-7f36088a8c9c.jpg
+│       ├── 9fa9afaf-538d-446c-b417-2276bf6f640c.jpg
+│       ├── a862c567-6bca-409f-85c4-00696694d680.webp
+│       ├── ac5cad9f-237f-4710-b08c-ce0303b875a7.jpg
+│       ├── ad05a850-0ce6-48ea-b107-674aedbd83b6.webp
+│       ├── bb2cdece-9f78-4aa8-ae26-f9e4b49fbd7b.jpeg
+│       ├── bcb1b7c0-ecce-4753-ab3d-6d8f4effc9fc.jpg
+│       ├── bdab656e-071c-4827-b8eb-22efa8030e96.jpg
+│       ├── be260c35-b8c9-4918-b870-c5d0d0e193da.jpg
+│       ├── c4aa254d-c501-4a07-a27e-bdd9eea8ee4e.jpg
+│       ├── c5ece2bc-0ab4-4b3c-8f30-cd3b786a53cb.webp
+│       ├── c81c1001-f2a1-4bf9-be01-4b0b97db757b.jpg
+│       ├── cbb3e688-1be4-4cdb-baa6-39d96bea9b69.jpg
+│       ├── cc159ced-45f1-4aa9-8e58-7d848119ca15.jpeg
+│       ├── d0b4eda2-14a6-4ff0-9932-034181b46b88.jpg
+│       ├── d80c0ea1-3c3f-4cbd-9b84-1c5c3ef15093.png
+│       ├── d8735a95-7dcc-489e-aa18-1eea50d4e4e7.jpeg
+│       ├── dcf7f361-2ccf-4df2-9079-f0cf4fccf03e.png
+│       ├── dd189ebd-179d-4517-942f-e6aaced633af.jpg
+│       ├── df0ca282-aa8f-44ff-9974-4076ae115ebd.jpg
+│       ├── e7e529b4-0a22-4001-b7cf-9dae51c3c702.avif
+│       ├── ebb91dd6-78c1-47a6-bcab-ad15b2583c89.png
+│       ├── ec01ffa5-74fa-451f-a124-53fd58b2be11.jpg
+│       ├── ee3fefdb-e273-43eb-86bd-91ec0efba4a8.png
+│       ├── f8c87289-5317-4495-a524-42cca2b24c61.jpg
+│       ├── f9b63fb2-5987-4bd8-9d3e-2a278d3b645d.jpg
+│       └── ff0892fb-13cf-4b55-bdf8-b9257730452c.jpeg
+├── BEAUTIFUL_STRIPE_UI_READY.md
+├── cookies.txt
+├── ENVIRONMENT_SETUP.md
+├── FIND_PUBLISHABLE_KEY.md
+├── frontend
+│   ├── eslint.config.js
+│   ├── generate-local-cert.sh
+│   ├── https.vite.config.ts
+│   ├── index.html
+│   ├── localhost-key.pem
+│   ├── localhost.pem
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── public
+│   │   ├── test-oauth.html
+│   │   └── vite.svg
+│   ├── README.md
+│   ├── src
+│   │   ├── App-backup-2.tsx
+│   │   ├── App-end.tsx
+│   │   ├── App-old-broken.tsx
+│   │   ├── App-temp.tsx
+│   │   ├── App.css
+│   │   ├── App.tsx
+│   │   ├── assets
+│   │   ├── components
+│   │   ├── index-backup.css
+│   │   ├── index-new.css
+│   │   ├── index.css
+│   │   ├── main.tsx
+│   │   ├── pages
+│   │   ├── Router.tsx
+│   │   ├── services
+│   │   ├── styles
+│   │   ├── utils
+│   │   └── vite-env.d.ts
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   └── vite.config.ts
+├── HOW_TO_FIND_PUBLISHABLE_KEY.md
+├── LOCAL_HTTPS_SETUP.md
+├── NEED_PUBLISHABLE_KEY.md
+├── pom.xml
+├── PORT_FIXED.md
+├── project_tree.txt
+├── README.md
+├── replace.txt
+├── repo-backup-2025-08-18.bundle
+├── sample_reviews.sql
+├── SESSION_CART_INTEGRATION.md
+├── SESSION_LONG_TERM_CONFIG.md
+├── setup-stripe.sh
+├── src
+│   └── main
+│       ├── java
+│       └── resources
+├── STRIPE_READY.md
+├── STRIPE_SETUP_GUIDE.md
+├── target
+│   ├── classes
+│   │   ├── com
+│   │   └── templates
+│   ├── E-commerceStore.WebApp-0.0.1-SNAPSHOT.jar
+│   ├── E-commerceStore.WebApp-0.0.1-SNAPSHOT.jar.original
+│   ├── generated-sources
+│   │   └── annotations
+│   ├── maven-archiver
+│   │   └── pom.properties
+│   └── maven-status
+│       └── maven-compiler-plugin
+├── test-cart.html
+├── test-session-timeout.html
+└── workspace.code-workspace
+
+34 directories, 109 files

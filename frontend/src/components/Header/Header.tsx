@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Header.css';
 
@@ -12,6 +12,9 @@ interface User {
   email: string;
   phoneNumber?: string;
 }
+
+/** ถ้า API ของคุณมี slug ให้ร้านค้าไว้ด้วย ให้รองรับแบบ optional ไว้ */
+type StoreWithSlug = Store & { slug?: string };
 
 interface HeaderProps {
   cartCount: number;
@@ -34,17 +37,30 @@ const Header: React.FC<HeaderProps> = ({
   onLogout,
   onCartClick
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [myStores, setMyStores] = useState<Store[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showUserMenu, setShowUserMenu] = useState<boolean>(false);
+  const [showStoresSub, setShowStoresSub] = useState<boolean>(true); // keep open by default
+  const [myStores, setMyStores] = useState<StoreWithSlug[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) getMyStores().then(setMyStores);
-    else setMyStores([]);
+    if (user) {
+      getMyStores()
+        .then((stores) => setMyStores(stores as StoreWithSlug[]))
+        .catch(() => setMyStores([]));
+    } else {
+      setMyStores([]);
+    }
   }, [user]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Close menu on ESC
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowUserMenu(false); };
+    document.addEventListener('keydown', onEsc);
+    return () => document.removeEventListener('keydown', onEsc);
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onSearch(searchQuery.trim());
   };
@@ -54,6 +70,12 @@ const Header: React.FC<HeaderProps> = ({
     setSearchQuery(q);
     onSearch(q);
   };
+
+  const goStore = useCallback((s: StoreWithSlug) => {
+    if (s.slug && s.slug.length > 0) navigate(`/store/${s.slug}`);
+    else navigate(`/store/${s.id}`);
+    setShowUserMenu(false);
+  }, [navigate]);
 
   return (
     <header className="shopease-header">
@@ -68,9 +90,10 @@ const Header: React.FC<HeaderProps> = ({
             <button className="u-link" onClick={() => navigate('/download')}>ดาวน์โหลด</button>
             <span className="u-sep">|</span>
             <span className="u-muted">ติดตามเรา</span>
-            <a className="u-icon" href="#" aria-label="Facebook">📘</a>
-            <a className="u-icon" href="#" aria-label="Instagram">📸</a>
-            <a className="u-icon" href="#" aria-label="YouTube">▶️</a>
+            {/* ใช้ button เพื่อหลีกเลี่ยง # และคง a11y */}
+            <button className="u-icon" aria-label="Facebook">📘</button>
+            <button className="u-icon" aria-label="Instagram">📸</button>
+            <button className="u-icon" aria-label="YouTube">▶️</button>
           </nav>
 
           <div className="utility-right">
@@ -87,11 +110,25 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Auth */}
             {user ? (
-              <div className="user-chip" onClick={() => setShowUserMenu(!showUserMenu)}>
+              <button
+                className="user-chip"
+                onClick={() => setShowUserMenu((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={showUserMenu}
+              >
                 <span className="chip-avatar">{user.firstName.charAt(0).toUpperCase()}</span>
                 <span className="chip-name">{user.firstName}</span>
-                <span className="chip-arrow">▾</span>
-              </div>
+                <svg
+                  className={`chip-caret ${showUserMenu ? 'rot' : ''}`}
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M7 10l5 5 5-5H7z"/>
+                </svg>
+              </button>
             ) : (
               <button className="u-link" onClick={onLoginClick}>🔐 เข้าสู่ระบบ</button>
             )}
@@ -102,7 +139,16 @@ const Header: React.FC<HeaderProps> = ({
       {/* Main row: brand + search + cart */}
       <div className="main-bar">
         <div className="container main-inner">
-          <div className="brand" onClick={() => navigate('/')}>
+          <div
+            className="brand"
+            onClick={() => navigate('/')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+              if (e.key === 'Enter') navigate('/');
+            }}
+            aria-label="กลับหน้าแรก"
+          >
             <div className="brand-badge">S</div>
             <div className="brand-text">
               <div className="brand-title">ShopEase</div>
@@ -157,7 +203,7 @@ const Header: React.FC<HeaderProps> = ({
       {/* User dropdown */}
       {user && showUserMenu && (
         <>
-          <div className="user-menu">
+          <div className="user-menu" role="menu" aria-label="เมนูผู้ใช้">
             <div className="menu-header">
               <div className="menu-avatar">{user.firstName.charAt(0).toUpperCase()}</div>
               <div className="menu-meta">
@@ -166,34 +212,95 @@ const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
 
-            <div className="menu-group">
-              {myStores.length === 1 && (
-                <button className="menu-item" onClick={() => navigate(`/store/${myStores[0].id}`)}>🏪 หน้าร้านของฉัน</button>
-              )}
-              {myStores.length > 1 && (
-                <>
-                  <div className="menu-label">ร้านค้าของฉัน</div>
-                  {myStores.map((s) => (
-                    <button key={s.id} className="menu-item" onClick={() => navigate(`/store/${s.id}`)}>🏪 {s.name}</button>
-                  ))}
-                </>
+            {/* ร้านของฉัน (Dropdown) */}
+            <div className={`menu-group stores ${showStoresSub ? 'open' : ''}`}>
+              <button
+                className="menu-item sub-trigger"
+                onClick={() => setShowStoresSub((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={showStoresSub}
+              >
+                <span className="mi-ic">🏬</span>
+                ร้านของฉัน
+                <svg
+                  className={`chev ${showStoresSub ? 'rot' : ''}`}
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M7 10l5 5 5-5H7z"/>
+                </svg>
+              </button>
+
+              {showStoresSub && (
+                <div className="submenu" role="menu">
+                  {myStores.length === 0 ? (
+                    <div className="submenu-empty">
+                      ยังไม่มีร้านที่คุณสร้าง
+                      <button
+                        className="link-create"
+                        onClick={() => { setShowUserMenu(false); navigate('/create-store'); }}
+                      >
+                        + สร้างร้านใหม่
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="stores-list">
+                        {myStores.map((s) => (
+                          <button
+                            key={s.id}
+                            className="store-item"
+                            onClick={() => goStore(s)}
+                            role="menuitem"
+                          >
+                            <img
+                              src={s.logoUrl ?? 'https://via.placeholder.com/36x36?text=%F0%9F%8F%AC'}
+                              alt="โลโก้ร้าน"
+                              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                e.currentTarget.src = 'https://via.placeholder.com/36x36?text=%3F';
+                              }}
+                            />
+                            <span className="store-name">{s.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="submenu-actions">
+                        <button
+                          className="submenu-link"
+                          onClick={() => { setShowUserMenu(false); navigate('/stores'); }}
+                        >
+                          ดูร้านทั้งหมด
+                        </button>
+                        <button
+                          className="submenu-cta"
+                          onClick={() => { setShowUserMenu(false); navigate('/create-store'); }}
+                        >
+                          + สร้างร้านใหม่
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
 
             <div className="menu-group">
-              <button className="menu-item" onClick={() => navigate('/profile')}>👤 โปรไฟล์ของฉัน</button>
-              <button className="menu-item" onClick={() => navigate('/wallet')}>💰 กระเป๋าเงิน</button>
-              <button className="menu-item" onClick={() => navigate('/payment-history')}>📊 ประวัติการชำระเงิน</button>
-              <button className="menu-item" onClick={() => navigate('/orders/history')}>📦 คำสั่งซื้อของฉัน</button>
-              <button className="menu-item">❤️ รายการโปรด</button>
-              <button className="menu-item">🎟️ คูปองของฉัน</button>
+              <button className="menu-item" onClick={() => { setShowUserMenu(false); navigate('/profile'); }}>👤 โปรไฟล์ของฉัน</button>
+              <button className="menu-item" onClick={() => { setShowUserMenu(false); navigate('/wallet'); }}>💰 กระเป๋าเงิน</button>
+              <button className="menu-item" onClick={() => { setShowUserMenu(false); navigate('/payment-history'); }}>📊 ประวัติการชำระเงิน</button>
+              <button className="menu-item" onClick={() => { setShowUserMenu(false); navigate('/orders/history'); }}>📦 คำสั่งซื้อของฉัน</button>
+              <button className="menu-item" onClick={() => { setShowUserMenu(false); navigate('/favorites'); }}>❤️ รายการโปรด</button>
+              <button className="menu-item" onClick={() => { setShowUserMenu(false); navigate('/coupons'); }}>🎟️ คูปองของฉัน</button>
             </div>
 
             {isAdmin && (
               <div className="menu-group">
                 <div className="menu-label">สำหรับผู้ดูแล</div>
-                <button className="menu-item" onClick={() => navigate('/admin-finance')}>📈 แดชบอร์ดการเงิน</button>
-                <button className="menu-item" onClick={() => navigate('/admin')}>⚙️ จัดการระบบ</button>
+                <button className="menu-item" onClick={() => { setShowUserMenu(false); navigate('/admin-finance'); }}>📈 แดชบอร์ดการเงิน</button>
+                <button className="menu-item" onClick={() => { setShowUserMenu(false); navigate('/admin'); }}>⚙️ จัดการระบบ</button>
               </div>
             )}
 
